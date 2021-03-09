@@ -30,6 +30,9 @@ import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
+
+import com.google.mlkit.vision.text.Text;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -179,6 +182,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             LOGGER.i("Running detection on image " + currTimestamp);
             final long startTime = SystemClock.uptimeMillis();
             final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
+
+            TextGeneration textGeneration = new TextGeneration(croppedBitmap, 0);
+            textGeneration.Generate().AddListener(new TextGeneration.TextGenCallback() {
+              @Override
+              public void CallBack(Text text) {
+
+              }
+            });
+
             lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
@@ -197,6 +209,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             final List<Detector.Recognition> mappedRecognitions =
                 new ArrayList<Detector.Recognition>();
+            Detector.Recognition recognition;
+
+            RectF rec = recognition.getLocation();
+            rec.
 
             for (final Detector.Recognition result : results) {
               final RectF location = result.getLocation();
