@@ -23,13 +23,17 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 
 import com.google.mlkit.vision.text.Text;
 
@@ -59,7 +63,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
   private static final DetectorMode MODE = DetectorMode.TF_OD_API;
   // Minimum detection confidence to track a detection.
-  private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
+  private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.90f;
   private static final boolean MAINTAIN_ASPECT = false;
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
   private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -84,6 +88,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private MultiBoxTracker tracker;
 
   private BorderedText borderedText;
+
+  TextGeneration textGeneration;
 
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -148,6 +154,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         });
 
     tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
+
+    textGeneration = new TextGeneration();
+    textGeneration.AddListener(new TextGeneration.TextGenCallback() {
+      @Override
+      public void CallBackSuccess(Text text) {
+        String label = text.getText().replace("\n"," ");
+        tracker.SetLabel(label);
+      }
+
+      @Override
+      public void CallBackFailure(@NonNull Exception e) {
+
+      }
+    });
+
   }
 
   @Override
@@ -182,15 +203,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             LOGGER.i("Running detection on image " + currTimestamp);
             final long startTime = SystemClock.uptimeMillis();
             final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
-
-            TextGeneration textGeneration = new TextGeneration(croppedBitmap, 0);
-            textGeneration.Generate().AddListener(new TextGeneration.TextGenCallback() {
-              @Override
-              public void CallBack(Text text) {
-
-              }
-            });
-
             lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
@@ -209,20 +221,27 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             final List<Detector.Recognition> mappedRecognitions =
                 new ArrayList<Detector.Recognition>();
-            Detector.Recognition recognition;
-
-            RectF rec = recognition.getLocation();
-            rec.
 
             for (final Detector.Recognition result : results) {
               final RectF location = result.getLocation();
               if (location != null && result.getConfidence() >= minimumConfidence) {
+
+                Rect box = new Rect();
+                box.left = (int)location.left;
+                box.top = (int)location.top;
+                box.right = (int)location.right;
+                box.bottom = (int)location.bottom;
+
+                Bitmap recognitionBitmap = TextGeneration.cropBitmap(croppedBitmap, box);
+                textGeneration.Generate(recognitionBitmap, 0);
+
                 canvas.drawRect(location, paint);
 
                 cropToFrameTransform.mapRect(location);
 
                 result.setLocation(location);
                 mappedRecognitions.add(result);
+                break;
               }
             }
 
@@ -278,17 +297,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   @Override
   protected void setNumThreads(final int numThreads) {
-    runInBackground(
-        () -> {
-          try {
-            detector.setNumThreads(numThreads);
-          } catch (IllegalArgumentException e) {
-            LOGGER.e(e, "Failed to set multithreads.");
-            runOnUiThread(
-                () -> {
-                  Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                });
-          }
-        });
+    runInBackground(() -> detector.setNumThreads(numThreads));
   }
 }

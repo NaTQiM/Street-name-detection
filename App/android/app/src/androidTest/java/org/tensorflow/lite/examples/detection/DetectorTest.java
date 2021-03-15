@@ -28,12 +28,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.RectF;
-import android.util.Log;
 import android.util.Size;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-
-import java.io.Console;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -52,7 +49,7 @@ import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIMod
 public class DetectorTest {
 
   private static final int MODEL_INPUT_SIZE = 300;
-  private static final boolean IS_MODEL_QUANTIZED = false;
+  private static final boolean IS_MODEL_QUANTIZED = true;
   private static final String MODEL_FILE = "detect.tflite";
   private static final String LABELS_FILE = "labelmap.txt";
   private static final Size IMAGE_SIZE = new Size(640, 480);
@@ -89,9 +86,8 @@ public class DetectorTest {
   @Test
   public void detectionResultsShouldNotChange() throws Exception {
     Canvas canvas = new Canvas(croppedBitmap);
-    canvas.drawBitmap(loadImage("test1.jpg"), frameToCropTransform, null);
+    canvas.drawBitmap(loadImage("table.jpg"), frameToCropTransform, null);
     final List<Recognition> results = detector.recognizeImage(croppedBitmap);
-    Log.d("Test", results.toString());
     final List<Recognition> expected = loadRecognitions("table_results.txt");
 
     for (Recognition target : expected) {
@@ -107,7 +103,7 @@ public class DetectorTest {
           break;
         }
       }
-//      assertThat(matched).isTrue();
+      assertThat(matched).isTrue();
     }
   }
 

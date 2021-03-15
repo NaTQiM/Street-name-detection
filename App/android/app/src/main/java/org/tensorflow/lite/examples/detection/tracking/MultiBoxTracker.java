@@ -68,6 +68,12 @@ public class MultiBoxTracker {
   private int frameHeight;
   private int sensorOrientation;
 
+  private String label = "undefined";
+
+  public void SetLabel(String str) {
+    label = str;
+  }
+
   public MultiBoxTracker(final Context context) {
     for (final int color : COLORS) {
       availableColors.add(color);
@@ -108,7 +114,6 @@ public class MultiBoxTracker {
       canvas.drawRect(rect, boxPaint);
       canvas.drawText("" + detection.first, rect.left, rect.top, textPaint);
       borderedText.drawText(canvas, rect.centerX(), rect.centerY(), "" + detection.first);
-
     }
   }
 
@@ -146,7 +151,7 @@ public class MultiBoxTracker {
 
       final String labelString =
           !TextUtils.isEmpty(recognition.title)
-              ? String.format("%s %.2f", recognition.title, (100 * recognition.detectionConfidence))
+              ? String.format("%s %.2f", /*recognition.title*/ label, (100 * recognition.detectionConfidence))
               : String.format("%.2f", (100 * recognition.detectionConfidence));
       //            borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.top,
       // labelString);

@@ -1,14 +1,15 @@
 package org.tensorflow.lite.examples.detection;
-import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
+
+import android.app.Activity;
 import android.graphics.Bitmap;
-import android.util.Log;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.media.Image;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.mlkit.vision.common.InputImage;
@@ -16,64 +17,87 @@ import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.TextRecognition;
 
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.concurrent.Executor;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.security.cert.PKIXRevocationChecker;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import org.tensorflow.lite.Interpreter;
-
-import kotlin.jvm.internal.Intrinsics;
 
 public class TextGeneration {
-    InputImage image;
     TextRecognizer recognizer;
-    public TextGeneration(Bitmap bitmap, int rot) {
-        image = InputImage.fromBitmap(bitmap, rot);
+    boolean isGenerating = false;
+    private ArrayList<TextGenCallback> textGenCallbacks = new ArrayList<TextGenCallback>();
+
+    public TextGeneration() {
         recognizer = TextRecognition.getClient();
     }
 
-    public TextGenListener Generate() {
-        TextGenListener textGenListener = new TextGenListener();
+    public Task<Text> Generate(Bitmap bitmap, int rotation) {
+        if (isGenerating)
+            return null;
+        isGenerating = true;
+
+        InputImage image = InputImage.fromBitmap(bitmap, rotation);
         Task<Text> result =
-            recognizer.process(image)
-                .addOnSuccessListener(new OnSuccessListener<Text>() {
-                    @Override
-                    public void onSuccess(Text visionText) {
-                        // Task completed successfully
-                        // ...
-                        textGenListener.Invoke(visionText);
-                    }
-                })
-                .addOnFailureListener(
-                    new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            // Task failed with an exception
-                            // ...
-                        }
-                    });
-        return textGenListener;
+                recognizer.process(image)
+                        .addOnSuccessListener(new OnSuccessListener<Text>() {
+                            @Override
+                            public void onSuccess(Text visionText) {
+                                // Task completed successfully
+                                // ...
+                                InvokeSuccess(visionText);
+                                isGenerating = false;
+                            }
+                        })
+                        .addOnFailureListener(
+                                new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        // Task failed with an exception
+                                        // ...
+                                        InvokeFailure(e);
+                                        isGenerating = false;
+                                    }
+                                });
+        return result;
     }
 
-    public class TextGenListener {
-        private TextGenCallback textGenCallback;
-        public void AddListener(TextGenCallback callback) {
-            this.textGenCallback = callback;
-        }
-        public void Invoke(Text text) {
-            textGenCallback.CallBack(text);
+
+    public void AddListener(TextGenCallback callback) {
+        if (!this.textGenCallbacks.contains(callback))
+            this.textGenCallbacks.add(callback);
+    }
+
+    public void RemoveListener(TextGenCallback callback) {
+        if (this.textGenCallbacks.contains(callback))
+            this.textGenCallbacks.add(callback);
+
+    }
+
+    public void InvokeSuccess(Text text) {
+        for (TextGenCallback callback: textGenCallbacks) {
+            callback.CallBackSuccess(text);
         }
     }
+
+    public void InvokeFailure(@NonNull Exception e) {
+        for (TextGenCallback callback: textGenCallbacks) {
+            callback.CallBackFailure(e);
+        }
+    }
+
 
     public interface TextGenCallback {
-        void CallBack(Text text);
+        void CallBackSuccess(Text text);
+        void CallBackFailure(@NonNull Exception e);
     }
 
+    public static Bitmap cropBitmap(Bitmap bitmap, Rect rect){
+        int w=rect.right-rect.left;
+        int h=rect.bottom-rect.top;
+        Bitmap ret=Bitmap.createBitmap(w, h, bitmap.getConfig());
+        Canvas canvas = new Canvas(ret);
+        canvas.drawBitmap(bitmap, -rect.left, -rect.top, null);
+        return ret;
+    }
 }
-
 
