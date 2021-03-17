@@ -27,19 +27,31 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
 import com.google.mlkit.vision.text.Text;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
 import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
@@ -54,16 +66,18 @@ import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
  * objects.
  */
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
-  private static final Logger LOGGER = new Logger();
+  public static final Logger LOGGER = new Logger();
 
   // Configuration values for the prepackaged SSD model.
   private static final int TF_OD_API_INPUT_SIZE = 300;
   private static final boolean TF_OD_API_IS_QUANTIZED = false;
   private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
   private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
+  private static final String STREET_NAME_DATA_FILE = "streetnames.json";
   private static final DetectorMode MODE = DetectorMode.TF_OD_API;
   // Minimum detection confidence to track a detection.
-  private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.90f;
+  private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.70f;
+  private static final float MINIMUM_CONFIDENCE_TEXT_GEN = 0.70f;
   private static final boolean MAINTAIN_ASPECT = false;
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
   private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -90,6 +104,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private BorderedText borderedText;
 
   TextGeneration textGeneration;
+  Map<String, String> streetnames_data = new HashMap<>();
 
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -155,12 +170,54 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
 
+    String street_name_string = loadJSONFromAsset(STREET_NAME_DATA_FILE);
+    try {
+      JSONObject jsonObject = new JSONObject(street_name_string);
+      Iterator<String> keys = jsonObject.keys();
+      while(keys.hasNext()) {
+        String key = keys.next();
+        if (jsonObject.get(key) instanceof JSONObject) {
+          String str = ((JSONObject) jsonObject.get(key)).toString();
+          streetnames_data.put(key, str);
+        }
+      }
+    }
+    catch (JsonIOException | JSONException e)
+    {
+      e.printStackTrace();
+    }
+
+
     textGeneration = new TextGeneration();
     textGeneration.AddListener(new TextGeneration.TextGenCallback() {
       @Override
       public void CallBackSuccess(Text text) {
-        String label = text.getText().replace("\n"," ");
-        tracker.SetLabel(label);
+        String label = text.getText().toUpperCase()
+                .replace("\n"," ");
+        boolean is_contains_duong = label.contains("DUONG");
+        String new_label = is_contains_duong?label.replace("DUONG", ""):label;
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            if (streetnames_data.isEmpty())
+              return;
+
+            Pair<Integer, String> temp =
+                    new Pair<Integer, String>(-1, null);
+            for (Map.Entry<String, String> item: streetnames_data.entrySet()) {
+              String key = is_contains_duong?item.getKey().replace("DUONG ", ""):item.getKey();
+              int compute = LevenshteinDistanceDP.compute(key.toLowerCase(), new_label.toLowerCase());
+              LOGGER.i("Compare: " + item.getKey() + " - " + new_label + " => " + compute);
+              if (temp.first < compute)
+              {
+                temp = new Pair<Integer, String>(compute,item.getKey());
+              }
+            }
+            int min = (int)(MINIMUM_CONFIDENCE_TEXT_GEN*100f);
+            StreetName streetName = StreetName.createNewFromJson(temp.first<min?"":streetnames_data.get(temp.second));
+            tracker.SetLabel(streetName.getName());
+          }
+        }).start();
       }
 
       @Override
@@ -299,4 +356,22 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   protected void setNumThreads(final int numThreads) {
     runInBackground(() -> detector.setNumThreads(numThreads));
   }
+
+  public String loadJSONFromAsset(String file) {
+    String json = "{\"null\":\"empty\"}";
+    try {
+      InputStream is = getAssets().open(file);
+      int size = is.available();
+      byte[] buffer = new byte[size];
+      is.read(buffer);
+      is.close();
+      json = new String(buffer, "UTF-8");
+    } catch (IOException ex) {
+      ex.printStackTrace();
+      return null;
+    }
+    return json;
+  }
+
+
 }
