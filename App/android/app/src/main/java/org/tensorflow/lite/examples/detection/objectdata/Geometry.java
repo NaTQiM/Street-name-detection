@@ -1,39 +1,40 @@
 package org.tensorflow.lite.examples.detection.objectdata;
 
 
+import androidx.annotation.Nullable;
+import androidx.core.app.NavUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Geometry {
-    Location location;
-    ViewPort viewPort;
+    public final Location location;
+    public final ViewPort viewPort;
 
-    public Location getLocation() {
-        return location;
+    public Geometry() {
+        this.location = new Location();
+        this.viewPort = new ViewPort();
     }
 
-    public ViewPort getViewPort() {
-        return viewPort;
-    }
-
-    protected Geometry() {
-
+    protected Geometry(Location location, ViewPort viewPort) {
+        this.location = location==null?new Location():location;
+        this.viewPort = viewPort==null?new ViewPort():viewPort;
     }
 
     public static Geometry NewFromJson(String json) {
-
-        Geometry geometry = new Geometry();
+        Location location = null;
+        ViewPort viewPort = null;
         try
         {
             JSONObject jsonRoot = new JSONObject(json);
-            geometry.location = Location.NewFromJson(jsonRoot.getString("location"));
-            geometry.viewPort = ViewPort.NewFromJson(jsonRoot.getString("viewPort"));
+            location = Location.NewFromJson(jsonRoot.getString("location"));
+            viewPort = ViewPort.NewFromJson(jsonRoot.getString("viewPort"));
         }
         catch (JSONException e)
         {
             e.printStackTrace();
         }
 
-        return geometry;
+        return new Geometry(location, viewPort);
     }
 }

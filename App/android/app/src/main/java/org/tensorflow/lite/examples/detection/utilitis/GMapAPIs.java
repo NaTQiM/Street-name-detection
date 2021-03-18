@@ -11,6 +11,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.tensorflow.lite.examples.detection.CameraActivity;
 import org.tensorflow.lite.examples.detection.objectdata.PlaceObjectGMaps;
 import org.tensorflow.lite.examples.detection.objectdata.StreetObjectGMaps;
 
@@ -26,6 +27,7 @@ public class GMapAPIs {
         this.api_key = api_key;
         queue = Volley.newRequestQueue(context);
     }
+
     public void getStreetObject(String keyword, OnSuccess onSuccess, @Nullable OnFailure onFailure) {
         List<StreetObjectGMaps> streetObjectGMAPS = new ArrayList<StreetObjectGMaps>();
 

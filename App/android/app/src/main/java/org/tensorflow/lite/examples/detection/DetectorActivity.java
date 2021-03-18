@@ -31,6 +31,8 @@ import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -57,6 +59,7 @@ import org.tensorflow.lite.examples.detection.tflite.Detector;
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 import org.tensorflow.lite.examples.detection.utilitis.LevenshteinDistanceDP;
+import org.tensorflow.lite.examples.detection.utilitis.Tupple;
 
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
     public static final Logger LOGGER = new Logger();
@@ -79,6 +82,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     private OverlayView trackingOverlay;
     private Integer sensorOrientation;
+    private Button detectResult;
     private Detector detector;
 
     private long lastProcessingTimeMs;
@@ -100,6 +104,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     TextGeneration textGeneration;
     Map<String, String> streetnames_data = new HashMap<>();
 
+
+    Tupple<StreetName, Integer> result_counter;
+
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
         final float textSizePx =
@@ -107,6 +114,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
         borderedText = new BorderedText(textSizePx);
         borderedText.setTypeface(Typeface.MONOSPACE);
+
 
         tracker = new MultiBoxTracker(this);
 
@@ -131,6 +139,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             finish();
         }
 
+        result_counter = new Tupple<StreetName, Integer>(new StreetName(), 0);
+
         detector.setNumThreads(DETECTOR_NUM_THREAD);
         previewWidth = size.getWidth();
         previewHeight = size.getHeight();
@@ -150,6 +160,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
+
+        detectResult = (Button)findViewById(R.id.detect_result);
+        detectResult.setVisibility(View.INVISIBLE);
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
@@ -207,6 +220,24 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         }
                         int min = (int) (MINIMUM_CONFIDENCE_TEXT_GEN * 100f);
                         StreetName streetName = StreetName.createNewFromJson(temp.first < min ? "" : streetnames_data.get(temp.second));
+
+                        if (streetName.getName().equals(result_counter.first.getName()))
+                            result_counter.second++;
+                        else
+                        {
+                            result_counter.first = streetName;
+                            result_counter.second = 0;
+                        }
+
+                        if (result_counter.second >= 30)
+                        {
+                            detectResult.setText("Đường\n" + result_counter.first.getName());
+                            detectResult.setVisibility(View.VISIBLE);
+
+                            result_counter.first = new StreetName();
+                            result_counter.second = 0;
+                        }
+
                         tracker.SetLabel(streetName.getName());
                     }
                 }).start();
@@ -303,9 +334,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         new Runnable() {
                             @Override
                             public void run() {
-                                showFrameInfo(previewWidth + "x" + previewHeight);
-                                showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
-                                showInference(lastProcessingTimeMs + "ms");
                             }
                         });
                 }

@@ -4,29 +4,21 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Location {
-    String lat = "0";
-    String lng = "0";
-
-    protected Location() {
-
-    }
-
-    public String _lat() {
-        return lat;
-    }
-
-    public String _lng() {
-        return lng;
-    }
-
+    public final String lat;
+    public final String lng;
 
     protected Location(String lat, String lng) {
-        this.lat = lat;
         this.lng = lng;
+        this.lat = lat;
+    }
+
+    protected Location() {
+        this.lng = "0.0";
+        this.lat = "0.0";
     }
 
     public static Location NewFromJson(String json) {
-        String _lat = "0", _lng = "0";
+        String _lat = "0.0", _lng = "0.0";
         try {
             JSONObject jsonRoot = new JSONObject(json);
             _lat = jsonRoot.getString("lat");
@@ -34,6 +26,6 @@ public class Location {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        return new Location();
+        return new Location(_lat, _lng);
     }
 }

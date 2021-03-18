@@ -67,6 +67,7 @@ public abstract class CameraActivity extends AppCompatActivity
     private static final Logger LOGGER = new Logger();
 
     private static final int PERMISSIONS_REQUEST = 1;
+    private static final String API_KEY = "AIzaSyAdPZ4-QUW2nsW8xswNQjB2lRoaBOPkO1s";
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
     protected int previewWidth = 0;
@@ -99,9 +100,6 @@ public abstract class CameraActivity extends AppCompatActivity
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.tfe_od_activity_camera);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         if (hasPermission()) {
             setFragment();
@@ -161,7 +159,7 @@ public abstract class CameraActivity extends AppCompatActivity
                     }
                 });
 
-        gMapAPIs = new GMapAPIs(this);
+        gMapAPIs = new GMapAPIs(this, API_KEY);
 
     }
 
@@ -504,20 +502,9 @@ public abstract class CameraActivity extends AppCompatActivity
 
     @Override
     public void onClick(View v) {
-      
+
     }
 
-    protected void showFrameInfo(String frameInfo) {
-        frameValueTextView.setText(frameInfo);
-    }
-
-    protected void showCropInfo(String cropInfo) {
-        cropValueTextView.setText(cropInfo);
-    }
-
-    protected void showInference(String inferenceTime) {
-        inferenceTimeTextView.setText(inferenceTime);
-    }
 
     protected abstract void processImage();
 
