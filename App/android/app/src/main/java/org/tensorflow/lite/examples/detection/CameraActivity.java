@@ -36,7 +36,6 @@ import android.os.HandlerThread;
 import android.os.Trace;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 
 import android.util.Size;
@@ -58,6 +57,7 @@ import java.nio.ByteBuffer;
 
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
+import org.tensorflow.lite.examples.detection.utilitis.GMapAPIs;
 
 public abstract class CameraActivity extends AppCompatActivity
         implements OnImageAvailableListener,
@@ -88,9 +88,9 @@ public abstract class CameraActivity extends AppCompatActivity
 
     protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
     protected ImageView bottomSheetArrowImageView;
-    private ImageView plusImageView, minusImageView;
-    private SwitchCompat apiSwitchCompat;
-    private TextView threadsTextView;
+
+    protected GMapAPIs gMapAPIs;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -109,10 +109,7 @@ public abstract class CameraActivity extends AppCompatActivity
             requestPermission();
         }
 
-        threadsTextView = findViewById(R.id.threads);
-        plusImageView = findViewById(R.id.plus);
-        minusImageView = findViewById(R.id.minus);
-        apiSwitchCompat = findViewById(R.id.api_info_switch);
+
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
         gestureLayout = findViewById(R.id.gesture_layout);
         sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
@@ -164,14 +161,8 @@ public abstract class CameraActivity extends AppCompatActivity
                     }
                 });
 
-        frameValueTextView = findViewById(R.id.frame_info);
-        cropValueTextView = findViewById(R.id.crop_info);
-        inferenceTimeTextView = findViewById(R.id.inference_info);
+        gMapAPIs = new GMapAPIs(this);
 
-        apiSwitchCompat.setOnCheckedChangeListener(this);
-
-        plusImageView.setOnClickListener(this);
-        minusImageView.setOnClickListener(this);
     }
 
     protected int[] getRgbBytes() {
@@ -507,9 +498,8 @@ public abstract class CameraActivity extends AppCompatActivity
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        setUseNNAPI(isChecked);
-        if (isChecked) apiSwitchCompat.setText("NNAPI");
-        else apiSwitchCompat.setText("TFLITE");
+
+
     }
 
     @Override
@@ -536,7 +526,6 @@ public abstract class CameraActivity extends AppCompatActivity
     protected abstract int getLayoutId();
 
     protected abstract Size getDesiredPreviewFrameSize();
-
 
     protected abstract void setUseNNAPI(boolean isChecked);
 }

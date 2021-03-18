@@ -8,6 +8,14 @@ public class Geometry {
     Location location;
     ViewPort viewPort;
 
+    public Location getLocation() {
+        return location;
+    }
+
+    public ViewPort getViewPort() {
+        return viewPort;
+    }
+
     protected Geometry() {
 
     }

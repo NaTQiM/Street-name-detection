@@ -1,20 +1,19 @@
-package org.tensorflow.lite.examples.detection;
+package org.tensorflow.lite.examples.detection.objectdata;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.tensorflow.lite.examples.detection.objectdata.Geometry;
 
-public class StreetObjectGMAPS {
+public class StreetObjectGMaps {
     protected String formatted_address;
     protected Geometry geometry;
     protected String name;
 
-    protected StreetObjectGMAPS() {
+    protected StreetObjectGMaps() {
 
     }
 
-    public static StreetObjectGMAPS CreateNewFromJson(String json) {
-        StreetObjectGMAPS streetObjectGMAPS = new StreetObjectGMAPS();
+    public static StreetObjectGMaps CreateNewFromJson(String json) {
+        StreetObjectGMaps streetObjectGMAPS = new StreetObjectGMaps();
         try
         {
             JSONObject jsonRoot = new JSONObject(json);

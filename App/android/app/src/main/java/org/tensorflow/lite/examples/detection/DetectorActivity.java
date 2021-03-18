@@ -35,23 +35,12 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.mlkit.vision.text.Text;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -67,6 +56,7 @@ import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
+import org.tensorflow.lite.examples.detection.utilitis.LevenshteinDistanceDP;
 
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
     public static final Logger LOGGER = new Logger();
@@ -86,9 +76,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
     private static final boolean SAVE_PREVIEW_BITMAP = false;
     private static final float TEXT_SIZE_DIP = 10;
-    OverlayView trackingOverlay;
-    private Integer sensorOrientation;
 
+    private OverlayView trackingOverlay;
+    private Integer sensorOrientation;
     private Detector detector;
 
     private long lastProcessingTimeMs;
@@ -228,24 +218,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         });
 
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=1500&type=restaurant&keyword=cruise&key=AIzaSyAdPZ4-QUW2nsW8xswNQjB2lRoaBOPkO1s";
-
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-            new Response.Listener<String>() {
-                @Override
-                public void onResponse(String response) {
-                    LOGGER.i(response);
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-
-                }
-            }
-        );
-        queue.add(stringRequest);
     }
 
     @Override

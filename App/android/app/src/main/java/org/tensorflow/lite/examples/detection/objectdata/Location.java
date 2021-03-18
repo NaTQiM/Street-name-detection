@@ -11,6 +11,15 @@ public class Location {
 
     }
 
+    public String _lat() {
+        return lat;
+    }
+
+    public String _lng() {
+        return lng;
+    }
+
+
     protected Location(String lat, String lng) {
         this.lat = lat;
         this.lng = lng;
