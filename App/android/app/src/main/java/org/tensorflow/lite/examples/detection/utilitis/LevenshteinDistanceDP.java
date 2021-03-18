@@ -1,4 +1,4 @@
-package org.tensorflow.lite.examples.detection;
+package org.tensorflow.lite.examples.detection.utilitis;
 
 import android.os.Build;
 
@@ -11,7 +11,7 @@ import java.util.*;
 public class LevenshteinDistanceDP {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    static int compute(String str1, String str2)
+    public static int compute(String str1, String str2)
     {
         // A 2-D matrix to store previously calculated
         // answers of subproblems in order

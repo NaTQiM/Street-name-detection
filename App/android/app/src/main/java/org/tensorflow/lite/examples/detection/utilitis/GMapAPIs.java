@@ -1,4 +1,4 @@
-package org.tensorflow.lite.examples.detection;
+package org.tensorflow.lite.examples.detection.utilitis;
 
 import android.content.Context;
 
@@ -12,6 +12,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.tensorflow.lite.examples.detection.objectdata.PlaceObjectGMaps;
+import org.tensorflow.lite.examples.detection.objectdata.StreetObjectGMaps;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ public class GMapAPIs {
         queue = Volley.newRequestQueue(context);
     }
     public void getStreetObject(String keyword, OnSuccess onSuccess, @Nullable OnFailure onFailure) {
-        List<StreetObjectGMAPS> streetObjectGMAPS = new ArrayList<StreetObjectGMAPS>();
+        List<StreetObjectGMaps> streetObjectGMAPS = new ArrayList<StreetObjectGMaps>();
 
         String url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=nguyen%20van%20dau%20ho%20chi%20minh&inputtype=textquery&fields=formatted_address,name,geometry&key=" + api_key;
 
@@ -36,7 +37,7 @@ public class GMapAPIs {
             {
                 @Override
                 public void onResponse(String response) {
-                    streetObjectGMAPS.add(StreetObjectGMAPS.CreateNewFromJson(response));
+                    streetObjectGMAPS.add(StreetObjectGMaps.CreateNewFromJson(response));
                     onSuccess.Listener(streetObjectGMAPS.get(0));
                 }
             }, new Response.ErrorListener()
@@ -62,7 +63,7 @@ public class GMapAPIs {
     }
 
     protected abstract class OnSuccess implements CallBack {
-        abstract void Listener(StreetObjectGMAPS street);
+        abstract void Listener(StreetObjectGMaps street);
     }
 
     protected abstract class OnFailure implements CallBack {
