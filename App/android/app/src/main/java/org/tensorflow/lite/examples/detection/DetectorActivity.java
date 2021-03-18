@@ -55,9 +55,11 @@ import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallbac
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
+import org.tensorflow.lite.examples.detection.objectdata.StreetObjectGMaps;
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
+import org.tensorflow.lite.examples.detection.utilitis.GMapAPIs;
 import org.tensorflow.lite.examples.detection.utilitis.LevenshteinDistanceDP;
 import org.tensorflow.lite.examples.detection.utilitis.Tupple;
 
@@ -79,6 +81,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
     private static final boolean SAVE_PREVIEW_BITMAP = false;
     private static final float TEXT_SIZE_DIP = 10;
+
+
 
     private OverlayView trackingOverlay;
     private Integer sensorOrientation;
@@ -106,6 +110,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
     Tupple<StreetName, Integer> result_counter;
+    private String temp_data = "";
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -162,7 +167,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         frameToCropTransform.invert(cropToFrameTransform);
 
         detectResult = (Button)findViewById(R.id.detect_result);
-        detectResult.setVisibility(View.INVISIBLE);
+        detectResult.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ShowData();
+            }
+        });
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
@@ -231,8 +241,16 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                         if (result_counter.second >= 30)
                         {
-                            detectResult.setText("Đường\n" + result_counter.first.getName());
-                            detectResult.setVisibility(View.VISIBLE);
+                            temp_data = streetName.getName();
+                            runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        detectResult.setText("Đường\n" + result_counter.first.getName());
+                                        detectResult.setVisibility(View.VISIBLE);
+
+                                    }
+                                });
 
                             result_counter.first = new StreetName();
                             result_counter.second = 0;
@@ -338,6 +356,27 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         });
                 }
             });
+    }
+
+    protected void ShowData() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                detectResult.setText("Loading...");
+            }
+        });
+
+        gMapAPIs.getStreetObject(temp_data, new GMapAPIs.CallBack() {
+            @Override
+            public void SuccessListener(StreetObjectGMaps street) {
+                LOGGER.i(street.formatted_address);
+            }
+
+            @Override
+            public void FailureListener(String error) {
+
+            }
+        });
     }
 
     @Override

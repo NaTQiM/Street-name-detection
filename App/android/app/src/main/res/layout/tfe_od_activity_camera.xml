@@ -53,10 +53,9 @@
             android:textStyle="bold"
             android:textColor="#02a6f7"
             android:lineHeight="25dp"
+            android:visibility="invisible"
             android:letterSpacing="0.2"
             />
-
-
 
     </RelativeLayout>
 

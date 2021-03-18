@@ -28,7 +28,7 @@ public class GMapAPIs {
         queue = Volley.newRequestQueue(context);
     }
 
-    public void getStreetObject(String keyword, OnSuccess onSuccess, @Nullable OnFailure onFailure) {
+    public void getStreetObject(String keyword, CallBack callBack) {
         List<StreetObjectGMaps> streetObjectGMAPS = new ArrayList<StreetObjectGMaps>();
 
         String url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=nguyen%20van%20dau%20ho%20chi%20minh&inputtype=textquery&fields=formatted_address,name,geometry&key=" + api_key;
@@ -40,13 +40,13 @@ public class GMapAPIs {
                 @Override
                 public void onResponse(String response) {
                     streetObjectGMAPS.add(StreetObjectGMaps.CreateNewFromJson(response));
-                    onSuccess.Listener(streetObjectGMAPS.get(0));
+                    callBack.SuccessListener(streetObjectGMAPS.get(0));
                 }
             }, new Response.ErrorListener()
             {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    onFailure.Listener(error.getMessage());
+                    callBack.FailureListener(error.getMessage());
                 }
             }
         );
@@ -60,15 +60,8 @@ public class GMapAPIs {
         return list;
     }
 
-    protected interface CallBack {
-
-    }
-
-    protected abstract class OnSuccess implements CallBack {
-        abstract void Listener(StreetObjectGMaps street);
-    }
-
-    protected abstract class OnFailure implements CallBack {
-        abstract void Listener(String error);
+    public interface CallBack {
+        public abstract void SuccessListener(StreetObjectGMaps street);
+        public abstract void FailureListener(String error);
     }
 }

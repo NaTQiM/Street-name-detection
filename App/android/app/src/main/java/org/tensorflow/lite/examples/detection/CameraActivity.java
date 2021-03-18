@@ -92,6 +92,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
     protected GMapAPIs gMapAPIs;
 
+    public boolean RunDetector = true;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -181,6 +182,9 @@ public abstract class CameraActivity extends AppCompatActivity
      */
     @Override
     public void onPreviewFrame(final byte[] bytes, final Camera camera) {
+        if (!RunDetector)
+            return;
+
         if (isProcessingFrame) {
             LOGGER.w("Dropping frame!");
             return;
@@ -228,6 +232,9 @@ public abstract class CameraActivity extends AppCompatActivity
      */
     @Override
     public void onImageAvailable(final ImageReader reader) {
+        if (!RunDetector)
+            return;
+
         // We need wait until we have some size from onPreviewSizeChosen
         if (previewWidth == 0 || previewHeight == 0) {
             return;
