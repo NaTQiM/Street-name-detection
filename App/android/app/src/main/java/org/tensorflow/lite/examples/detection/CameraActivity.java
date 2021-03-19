@@ -43,9 +43,11 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,7 +68,8 @@ public abstract class CameraActivity extends AppCompatActivity
         View.OnClickListener {
     private static final Logger LOGGER = new Logger();
 
-    private static final int PERMISSIONS_REQUEST = 1;
+    protected static final int PERMISSIONS_REQUEST = 1;
+    protected static final int REQUEST_PGS_PERMISSION_CODE = 2;
     private static final String API_KEY = "AIzaSyAdPZ4-QUW2nsW8xswNQjB2lRoaBOPkO1s";
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
@@ -94,6 +97,9 @@ public abstract class CameraActivity extends AppCompatActivity
 
     public boolean RunDetector = true;
 
+    protected GPSManager gpsManager;
+    protected Button detectResult;
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         LOGGER.d("onCreate " + this);
@@ -108,11 +114,20 @@ public abstract class CameraActivity extends AppCompatActivity
             requestPermission();
         }
 
+        gpsManager = new GPSManager(this, REQUEST_PGS_PERMISSION_CODE);
 
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
         gestureLayout = findViewById(R.id.gesture_layout);
         sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
         bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
+
+        detectResult = (Button) findViewById(R.id.detect_result);
+        detectResult.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ShowData();
+            }
+        });
 
         ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(
@@ -182,8 +197,6 @@ public abstract class CameraActivity extends AppCompatActivity
      */
     @Override
     public void onPreviewFrame(final byte[] bytes, final Camera camera) {
-        if (!RunDetector)
-            return;
 
         if (isProcessingFrame) {
             LOGGER.w("Dropping frame!");
@@ -232,8 +245,6 @@ public abstract class CameraActivity extends AppCompatActivity
      */
     @Override
     public void onImageAvailable(final ImageReader reader) {
-        if (!RunDetector)
-            return;
 
         // We need wait until we have some size from onPreviewSizeChosen
         if (previewWidth == 0 || previewHeight == 0) {
@@ -350,12 +361,22 @@ public abstract class CameraActivity extends AppCompatActivity
     public void onRequestPermissionsResult(
             final int requestCode, final String[] permissions, final int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSIONS_REQUEST) {
-            if (allPermissionsGranted(grantResults)) {
-                setFragment();
-            } else {
-                requestPermission();
-            }
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST:
+                if (allPermissionsGranted(grantResults)) {
+                    setFragment();
+                } else {
+                    requestPermission();
+                }
+                break;
+            case REQUEST_PGS_PERMISSION_CODE:
+                if (grantResults.length > 0 &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    gpsManager.onGPSPermissionGranted(true);
+                }  else {
+                    gpsManager.onGPSPermissionGranted(false);
+                }
+                break;
         }
     }
 
@@ -512,6 +533,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
     }
 
+    protected abstract void ShowData();
 
     protected abstract void processImage();
 

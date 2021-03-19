@@ -11,7 +11,11 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.tensorflow.lite.examples.detection.CameraActivity;
+import org.tensorflow.lite.examples.detection.objectdata.Geometry;
 import org.tensorflow.lite.examples.detection.objectdata.PlaceObjectGMaps;
 import org.tensorflow.lite.examples.detection.objectdata.StreetObjectGMaps;
 
@@ -29,9 +33,9 @@ public class GMapAPIs {
     }
 
     public void getStreetObject(String keyword, CallBack callBack) {
-        List<StreetObjectGMaps> streetObjectGMAPS = new ArrayList<StreetObjectGMaps>();
+        String sub_key = "ho chi minh";
 
-        String url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=nguyen%20van%20dau%20ho%20chi%20minh&inputtype=textquery&fields=formatted_address,name,geometry&key=" + api_key;
+        String url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=" + keyword + " " + sub_key + "&inputtype=textquery&fields=formatted_address,name,geometry&key=" + api_key;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -39,8 +43,23 @@ public class GMapAPIs {
             {
                 @Override
                 public void onResponse(String response) {
-                    streetObjectGMAPS.add(StreetObjectGMaps.CreateNewFromJson(response));
-                    callBack.SuccessListener(streetObjectGMAPS.get(0));
+                    String obj_data_json = "";
+                    try
+                    {
+                        JSONObject jsonRoot = new JSONObject(response);
+                        String status = jsonRoot.getString("status");
+                        if (status.equals("OK")) {
+                            JSONArray candidates = jsonRoot.getJSONArray("candidates");
+                            obj_data_json = candidates.get(0).toString();
+                        }
+                    }
+                    catch (JSONException e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                    StreetObjectGMaps obj = StreetObjectGMaps.CreateNewFromJson(obj_data_json);
+                    callBack.SuccessListener(obj);
                 }
             }, new Response.ErrorListener()
             {
