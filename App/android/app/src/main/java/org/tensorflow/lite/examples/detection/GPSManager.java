@@ -22,11 +22,18 @@ public class GPSManager implements LocationListener {
     public boolean isGPSEnable = false;
     private boolean locationAvailable = false;
     private Location location;
+    private LocationManager locationManager;
     private OnGetLocation onGetLocation = null;
 
     public GPSManager(Context ctx, int request_code) {
         this.context = ctx;
         list_callback = new ArrayList<onRequestGPSPermission>();
+        locationManager = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
+        try {
+            isGPSEnable = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch (Exception ex) {
+        }
+
         this.request_code = request_code;
     }
 
@@ -38,29 +45,29 @@ public class GPSManager implements LocationListener {
     public void requestGPSPermission() {
         ActivityCompat.requestPermissions(
                 (Activity) context,
-                new String[] {
+                new String[]{
                         Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS
                 },
                 request_code);
     }
 
     @SuppressLint("MissingPermission")
     private void requestForLocation() {
-        LocationManager locationManager = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     }
 
     protected void onGPSPermissionGranted(boolean result) {
-        if (result)
-        {
+        if (result) {
             requestForLocation();
             InvokeGranted();
-        }
-        else {
+        } else {
             InvokeDenied();
-            if (onGetLocation!=null)
+            if (onGetLocation != null) {
                 onGetLocation.Failure();
+                onGetLocation = null;
+            }
         }
     }
 
@@ -69,14 +76,14 @@ public class GPSManager implements LocationListener {
     }
 
     private void InvokeGranted() {
-        for (onRequestGPSPermission callback:
-             list_callback) {
+        for (onRequestGPSPermission callback :
+                list_callback) {
             callback.Granted();
         }
     }
 
     private void InvokeDenied() {
-        for (onRequestGPSPermission callback:
+        for (onRequestGPSPermission callback :
                 list_callback) {
             callback.Denied();
         }
@@ -95,8 +102,10 @@ public class GPSManager implements LocationListener {
         locationAvailable = true;
         this.location = location;
 
-        if (onGetLocation!=null)
+        if (onGetLocation != null) {
             onGetLocation.Success(location);
+            onGetLocation = null;
+        }
     }
 
     @Override
@@ -115,36 +124,34 @@ public class GPSManager implements LocationListener {
     }
 
     public void GetLocation(OnGetLocation callback) {
-        if (isGPSEnable)
-        {
-            if (isGPSPermissionGranted()){
+        if (isGPSEnable) {
+            if (isGPSPermissionGranted()) {
+
                 if (locationAvailable)
                     callback.Success(location);
-                else
-                {
+                else {
                     requestForLocation();
                     onGetLocation = callback;
                 }
-            }
-            else {
+
+            } else {
                 onGetLocation = callback;
                 requestGPSPermission();
             }
-        }
-        else
-        {
+        } else {
             callback.Failure();
         }
-
     }
 
     protected interface OnGetLocation {
         void Success(Location location);
+
         void Failure();
     }
 
     protected interface onRequestGPSPermission {
         void Granted();
+
         void Denied();
     }
 }

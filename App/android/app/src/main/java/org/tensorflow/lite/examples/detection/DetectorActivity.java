@@ -16,10 +16,8 @@
 
 package org.tensorflow.lite.examples.detection;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -31,28 +29,24 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.google.gson.JsonIOException;
 import com.google.mlkit.vision.text.Text;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -66,12 +60,14 @@ import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallbac
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
+import org.tensorflow.lite.examples.detection.objectdata.PlaceObjectGMaps;
 import org.tensorflow.lite.examples.detection.objectdata.StreetObjectGMaps;
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 import org.tensorflow.lite.examples.detection.utilitis.GMapAPIs;
 import org.tensorflow.lite.examples.detection.utilitis.LevenshteinDistanceDP;
+import org.tensorflow.lite.examples.detection.utilitis.SetImageViewByUrl;
 import org.tensorflow.lite.examples.detection.utilitis.Tupple;
 
 import java.text.Normalizer;
@@ -124,6 +120,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     Tupple<StreetName, Integer> result_counter;
     private String temp_data = "";
+
+    private int check_for_load_street_nearby = 0;
+    private StreetObjectGMaps streetObjectGMaps = null;
+    private Location userLocation = null;
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -364,26 +364,29 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 detectResult.setText("Loading...");
             }
         });
+        GMAP_APIS.getStreetObject(temp_data, new GMapAPIs.CallBack<StreetObjectGMaps>() {
+            @Override
+            public void SuccessListener(StreetObjectGMaps street) {
+                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> " + street.formatted_address);
+                streetObjectGMaps = street;
+                loadStreetNearby();
+            }
 
+            @Override
+            public void FailureListener(String error) {
+                loadStreetNearby();
+            }
+        });
         gpsManager.GetLocation(new GPSManager.OnGetLocation() {
             @Override
             public void Success(Location location) {
                 LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> " + location.getAltitude() + " : " + location.getLongitude());
+                loadStreetNearby();
             }
 
             @Override
             public void Failure() {
-                gMapAPIs.getStreetObject(temp_data, new GMapAPIs.CallBack() {
-                    @Override
-                    public void SuccessListener(StreetObjectGMaps street) {
-                        LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> " + street.formatted_address);
-                    }
-
-                    @Override
-                    public void FailureListener(String error) {
-
-                    }
-                });
+                loadStreetNearby();
             }
         });
     }
@@ -443,7 +446,72 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         return pattern.matcher(nfdNormalizedString).replaceAll("");
     }
 
+    private void loadStreetNearby() {
+        check_for_load_street_nearby++;
+        LOGGER.i(">>>>>>>>>>>>>>>>> i " + check_for_load_street_nearby);
+        if (check_for_load_street_nearby >= 2) {
+            check_for_load_street_nearby = 0;
 
+            String location = "";
+            if (userLocation!=null&&false)
+            {
+                location = userLocation.getLatitude() + "," + userLocation.getLongitude();
+            }
+            else if (streetObjectGMaps!=null){
+                location = streetObjectGMaps.geometry.location.lat + "," + streetObjectGMaps.geometry.location.lng;
+            }
+            else
+            {
+                backToScanStreetNameSign();
+                userLocation = null;
+                return;
+            }
+            LOGGER.i(">>>>>>>>>>>>>>>>>>>>> LOCATION " + location);
+            Context _this = this;
+            GMAP_APIS.getNearby(location, 1500, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+                @Override
+                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
+                    LOGGER.i(">>>>>>>>>>>>>>>>>" + result.size());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (PlaceObjectGMaps place: result) {
+                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
+
+                                LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
+                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
+                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
+                                textView.setText(place.name);
+                                listNearByPlaces.addView(placeObjectUI);
+                            }
+                            streetViewName.setText(streetObjectGMaps.name);
+                            detectResult.setVisibility(View.INVISIBLE);
+                            streetView.setVisibility(View.VISIBLE);
+                        }
+                    });
+
+                }
+
+                @Override
+                public void FailureListener(String error) {
+                    LOGGER.i("ERROR" + error);
+                    backToScanStreetNameSign();
+                    userLocation = null;
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void backToScanStreetNameSign() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                streetView.setVisibility(View.INVISIBLE);
+                computingDetection = true;
+            }
+        });
+    }
 
     public static Bitmap cropBitmap(Bitmap bitmap, RectF size) {
         Rect box = new Rect();

@@ -17,6 +17,7 @@
 package org.tensorflow.lite.examples.detection;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -36,7 +37,6 @@ import android.os.HandlerThread;
 import android.os.Trace;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
 import android.util.Size;
 import android.view.Surface;
@@ -45,13 +45,15 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Switch;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -86,19 +88,24 @@ public abstract class CameraActivity extends AppCompatActivity
     private Runnable postInferenceCallback;
     private Runnable imageConverter;
 
-    private LinearLayout bottomSheetLayout;
-    private LinearLayout gestureLayout;
     private BottomSheetBehavior<LinearLayout> sheetBehavior;
 
-    protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
-    protected ImageView bottomSheetArrowImageView;
-
-    protected GMapAPIs gMapAPIs;
+    protected GMapAPIs GMAP_APIS;
 
     public boolean RunDetector = true;
 
     protected GPSManager gpsManager;
     protected Button detectResult;
+
+    // UI
+    protected LinearLayout bottomSheetLayout;
+    protected LinearLayout gestureLayout;
+    protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
+    protected ImageView bottomSheetArrowImageView;
+    protected Button buttonCloseStreetView;
+    protected TextView streetViewName;
+    protected ScrollView streetView;
+    protected LinearLayout listNearByPlaces;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -116,12 +123,27 @@ public abstract class CameraActivity extends AppCompatActivity
 
         gpsManager = new GPSManager(this, REQUEST_PGS_PERMISSION_CODE);
 
+        streetView = (ScrollView)findViewById(R.id.street_view);
+        buttonCloseStreetView = (Button) findViewById(R.id.close_street_view);
+        streetViewName = (TextView) findViewById(R.id.street_view_name);
+
+        listNearByPlaces = (LinearLayout) findViewById(R.id.scroll_view_result);
+        detectResult = (Button) findViewById(R.id.detect_result);
+
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
         gestureLayout = findViewById(R.id.gesture_layout);
         sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
         bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
 
-        detectResult = (Button) findViewById(R.id.detect_result);
+
+
+        buttonCloseStreetView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                backToScanStreetNameSign();
+            }
+        });
+
         detectResult.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -175,7 +197,7 @@ public abstract class CameraActivity extends AppCompatActivity
                     }
                 });
 
-        gMapAPIs = new GMapAPIs(this, API_KEY);
+        GMAP_APIS = new GMapAPIs(this, API_KEY);
 
     }
 
@@ -458,6 +480,9 @@ public abstract class CameraActivity extends AppCompatActivity
     }
 
     protected void setFragment() {
+//        if (true)
+//        return;
+
         String cameraId = chooseCamera();
 
         Fragment fragment;
@@ -532,6 +557,7 @@ public abstract class CameraActivity extends AppCompatActivity
     public void onClick(View v) {
 
     }
+    protected abstract void backToScanStreetNameSign();
 
     protected abstract void ShowData();
 

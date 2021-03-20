@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/bottom_sheet_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -20,6 +21,15 @@
         android:paddingTop="10dp"
         android:paddingBottom="20dp">
 
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kéo lên"
+            android:textAlignment="center"
+            android:textColor="#f28d00"
+            android:textSize="10dp" />
+
         <ImageView
             android:id="@+id/bottom_sheet_arrow"
             android:layout_width="wrap_content"
@@ -29,12 +39,17 @@
 
     </LinearLayout>
 
-
-    <View
+    <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="1px"
-        android:layout_marginTop="10dp"
-        android:background="@android:color/darker_gray" />
+        android:layout_height="match_parent">
 
-    <!-- TODO(b/112541284): Unhide when new NNAPI delegate is used. -->
+        <LinearLayout
+            android:id="@+id/scroll_view_result"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
 </LinearLayout>

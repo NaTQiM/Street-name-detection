@@ -4,42 +4,76 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.function.BiConsumer;
 
 public class PlaceObjectGMaps {
-    protected String place_id;
-    protected String business_status;
-    protected String formatted_address;
-    protected Geometry geometry;
-    protected String name;
-    protected float rating;
-    protected String vicinity;
-    protected String[] type;
+    public final String place_id;
+    public final String business_status;
+    public final String formatted_address;
+    public final Geometry geometry;
+    public final String name;
+    public final String icon;
+    public final float rating;
+    public final String vicinity;
+    public final String[] type;
 
-    protected PlaceObjectGMaps() {
-
+    protected PlaceObjectGMaps(String place_id,
+                               String business_status,
+                               String formatted_address,
+                               Geometry geometry,
+                               String name,
+                               float rating,
+                               String vicinity,
+                               String[] type,
+                               String icon) {
+        this.place_id = place_id;
+        this.business_status = business_status;
+        this.formatted_address = formatted_address;
+        this.geometry = geometry;
+        this.name = name;
+        this.rating = rating;
+        this.vicinity = vicinity;
+        this.type = type;
+        this.icon = icon;
     }
 
     public static PlaceObjectGMaps CreateNewFromJson(String json) {
-        PlaceObjectGMaps streetObjectGMAPS = new PlaceObjectGMaps();
-        try
-        {
-            JSONObject jsonRoot = new JSONObject(json);
-            streetObjectGMAPS.name = jsonRoot.getString("name");
-            streetObjectGMAPS.place_id = jsonRoot.getString("place_id");
-            streetObjectGMAPS.business_status = jsonRoot.getString("business_status");
-            streetObjectGMAPS.formatted_address = jsonRoot.getString("formatted_address");
-            streetObjectGMAPS.rating = (float)jsonRoot.getDouble("rating");
-            streetObjectGMAPS.formatted_address = jsonRoot.getString("formatted_address");
-            streetObjectGMAPS.vicinity = jsonRoot.getString("vicinity");
-            streetObjectGMAPS.type = jsonRoot.getJSONArray("type").toString().split(",");
+        String place_id = "??";
+        String business_status = "??";
+        String formatted_address = "??";
+        Geometry geometry = new Geometry();
+        String name = "??";
+        float rating = 0.0f;
+        String vicinity = "??";
+        String[] type = {"??"};
+        String icon = "";
 
-            streetObjectGMAPS.geometry = Geometry.NewFromJson(jsonRoot.getString("geometry"));
-        }
-        catch (JSONException e)
-        {
+        try {
+            JSONObject jsonRoot = new JSONObject(json);
+            name = jsonRoot.getString("name");
+            icon = jsonRoot.getString("icon");
+            place_id = jsonRoot.getString("place_id");
+            business_status = jsonRoot.getString("business_status");
+            formatted_address = jsonRoot.getString("formatted_address");
+            rating = (float) jsonRoot.getDouble("rating");
+            formatted_address = jsonRoot.getString("formatted_address");
+            vicinity = jsonRoot.getString("vicinity");
+            type = jsonRoot.getJSONArray("type").toString().split(",");
+            geometry = Geometry.NewFromJson(jsonRoot.getString("geometry"));
+
+        } catch (JSONException e) {
             e.printStackTrace();
         }
-        return streetObjectGMAPS;
+        return new PlaceObjectGMaps(
+                place_id,
+                business_status,
+                formatted_address,
+                geometry,
+                name,
+                rating,
+                vicinity,
+                type,
+                icon);
     }
 
 }
