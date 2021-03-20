@@ -274,6 +274,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     protected void processImage() {
+        LOGGER.i("TIMESTAMP: " + timestamp);
         ++timestamp;
         final long currTimestamp = timestamp;
         trackingOverlay.postInvalidate();
@@ -508,7 +509,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             @Override
             public void run() {
                 streetView.setVisibility(View.INVISIBLE);
-                computingDetection = true;
+                RunDetector = true;
+                computingDetection = false;
             }
         });
     }
