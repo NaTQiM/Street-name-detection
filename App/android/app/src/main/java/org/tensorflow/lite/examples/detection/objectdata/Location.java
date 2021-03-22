@@ -7,7 +7,7 @@ public class Location {
     public final String lat;
     public final String lng;
 
-    protected Location(String lat, String lng) {
+    public Location(String lat, String lng) {
         this.lng = lng;
         this.lat = lat;
     }

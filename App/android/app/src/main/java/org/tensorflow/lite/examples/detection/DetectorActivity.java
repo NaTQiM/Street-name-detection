@@ -30,6 +30,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Build;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Size;
@@ -41,6 +42,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import com.google.gson.JsonIOException;
 import com.google.mlkit.vision.text.Text;
@@ -274,7 +276,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     protected void processImage() {
-        LOGGER.i("TIMESTAMP: " + timestamp);
+//        LOGGER.i("TIMESTAMP: " + timestamp);
         ++timestamp;
         final long currTimestamp = timestamp;
         trackingOverlay.postInvalidate();
@@ -329,7 +331,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         for (final Detector.Recognition result : results) {
                             final RectF location = result.getLocation();
                             if (location != null && result.getConfidence() >= minimumConfidence) {
-
                                 Bitmap recognitionBitmap = cropBitmap(croppedBitmap, location);
                                 textGeneration.Generate(recognitionBitmap, 0);
 
@@ -348,11 +349,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         computingDetection = false;
 
                         runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                    }
-                                });
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                }
+                            });
                     }
                 });
     }
@@ -378,10 +379,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 loadStreetNearby();
             }
         });
-        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
+
+/*        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
             @Override
             public void Success(Location location) {
                 LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> " + location.getAltitude() + " : " + location.getLongitude());
+                userLocation = location;
                 loadStreetNearby();
             }
 
@@ -389,7 +392,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             public void Failure() {
                 loadStreetNearby();
             }
-        });
+        });*/
     }
 
     @Override
@@ -450,11 +453,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private void loadStreetNearby() {
         check_for_load_street_nearby++;
         LOGGER.i(">>>>>>>>>>>>>>>>> i " + check_for_load_street_nearby);
-        if (check_for_load_street_nearby >= 2) {
+        if (check_for_load_street_nearby == 1) {
             check_for_load_street_nearby = 0;
 
             String location = "";
-            if (userLocation!=null&&false)
+            if (userLocation!=null)
             {
                 location = userLocation.getLatitude() + "," + userLocation.getLongitude();
             }
@@ -468,39 +471,101 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 return;
             }
             LOGGER.i(">>>>>>>>>>>>>>>>>>>>> LOCATION " + location);
-            Context _this = this;
-            GMAP_APIS.getNearby(location, 1500, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+            String first_address = "01 " + temp_data;
+            final Context _this = this;
+            LOGGER.i("<<<<<<" + first_address);
+            GMAP_APIS.getStreetObject(first_address, new GMapAPIs.CallBack<StreetObjectGMaps>() {
                 @Override
-                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
-                    LOGGER.i(">>>>>>>>>>>>>>>>>" + result.size());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (PlaceObjectGMaps place: result) {
-                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
-
-                                LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
-                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
-                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
-                                textView.setText(place.name);
-                                listNearByPlaces.addView(placeObjectUI);
-                            }
-                            streetViewName.setText(streetObjectGMaps.name);
-                            detectResult.setVisibility(View.INVISIBLE);
-                            streetView.setVisibility(View.VISIBLE);
-                        }
-                    });
+                public void SuccessListener(StreetObjectGMaps result) {
+                    String location = String.format("%s,%s", result.geometry.location.lat, result.geometry.location.lng);
+                    HashMap<String, PlaceObjectGMaps> list_nearby = new HashMap<>();
+                    LOGGER.i("temp_data: " + temp_data);
+                    getPlaceNearbyRecursive(_this, list_nearby, location, temp_data, -1);
 
                 }
 
                 @Override
                 public void FailureListener(String error) {
-                    LOGGER.i("ERROR" + error);
-                    backToScanStreetNameSign();
-                    userLocation = null;
+
                 }
             });
+
+//            GMAP_APIS.getNearby(location, 1500, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+//                @Override
+//                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
+//                    LOGGER.i(">>>>>>>>>>>>>>>>>" + result.size());
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            for (PlaceObjectGMaps place: result) {
+//                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
+//
+//                                LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
+//                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
+//                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
+//                                textView.setText(place.name);
+//                                listNearByPlaces.addView(placeObjectUI);
+//                            }
+//                            streetViewName.setText(streetObjectGMaps.name);
+//                            detectResult.setVisibility(View.INVISIBLE);
+//                            streetView.setVisibility(View.VISIBLE);
+//                        }
+//                    });
+//
+//                }
+//
+//                @Override
+//                public void FailureListener(String error) {
+//                    LOGGER.i("ERROR" + error);
+//                    backToScanStreetNameSign();
+//                    userLocation = null;
+//                }
+//            });
         }
+    }
+
+    private void getPlaceNearbyRecursive(final Context ctx, HashMap<String, PlaceObjectGMaps> list, String location, final String street, final int limit) {
+        if (limit >= 0 && list.size() >= limit)
+            return;
+
+        GMAP_APIS.getNearby(location, 100, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
+                Tupple<Integer, String> max_address = new Tupple<Integer, String>(0, location);
+                for (PlaceObjectGMaps place : result) {
+                    LOGGER.i(place.vicinity);
+                    String normalized_address = deAccent(place.vicinity).toLowerCase();
+                    Integer address_number = -1;
+                    try {
+                        address_number = Integer.parseUnsignedInt(normalized_address.split(" ")[0]);
+                    }
+                    catch (Exception error) {   }
+
+                    if (normalized_address.contains(deAccent(street).toLowerCase()) && !list.containsKey(place.place_id)) {
+                        if (address_number > max_address.first)
+                        {
+                            max_address.second = String.format("%s,%s", place.geometry.location.lat, place.geometry.location.lng);
+                            max_address.first = address_number;
+                        }
+                        list.put(place.place_id, place);
+                        LOGGER.i("Nearby: >> " + normalized_address);
+                    }
+                    else
+                    {
+                        LOGGER.i(normalized_address + " - " + deAccent(street).toLowerCase());
+                    }
+                }
+                if (!max_address.second.equals(location))
+                    getPlaceNearbyRecursive(ctx, list, max_address.second, street, limit);
+            }
+
+            @Override
+            public void FailureListener(String error) {
+
+            }
+        });
+
     }
 
     @Override

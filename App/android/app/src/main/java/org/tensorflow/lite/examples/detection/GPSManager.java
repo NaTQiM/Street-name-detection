@@ -9,6 +9,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 
@@ -101,7 +102,7 @@ public class GPSManager implements LocationListener {
     public void onLocationChanged(Location location) {
         locationAvailable = true;
         this.location = location;
-
+        Log.i("LOCATION GPS>>", this.location.getLatitude() + ", " + this.location.getLongitude());
         if (onGetLocation != null) {
             onGetLocation.Success(location);
             onGetLocation = null;
