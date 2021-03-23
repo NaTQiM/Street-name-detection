@@ -613,7 +613,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             @Override
             public void FailureListener(String error) {
-
+                backToScanStreetNameSign();
+                userLocation = null;
             }
         });
 
@@ -624,6 +625,28 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
             LOGGER.i(place.getValue().vicinity);
         }
+        Context _this = this;
+        LOGGER.i(">>>>>>>>>>>>>>>>>" + list.size());
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                for (Map.Entry<String, PlaceObjectGMaps> item: list.entrySet()) {
+
+                    PlaceObjectGMaps place = item.getValue();
+
+                    LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
+
+                    LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
+                    new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
+                    TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
+                    textView.setText(place.name);
+                    listNearByPlaces.addView(placeObjectUI);
+                }
+                streetViewName.setText(streetObjectGMaps.name);
+                detectResult.setVisibility(View.INVISIBLE);
+                streetView.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private Double distance(Tupple<Double, Double> v1, Tupple<Double, Double> v2)
