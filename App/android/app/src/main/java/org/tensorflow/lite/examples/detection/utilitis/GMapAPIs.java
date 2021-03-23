@@ -22,6 +22,8 @@ import org.tensorflow.lite.examples.detection.objectdata.StreetObjectGMaps;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class GMapAPIs {
     String api_key = "";
@@ -29,10 +31,13 @@ public class GMapAPIs {
     RequestQueue queue;
     String city = "ho chi minh";
 
+    RandomString rand;
+
     public GMapAPIs(Context ctx, String api_key) {
         this.context = ctx;
         this.api_key = api_key;
         queue = Volley.newRequestQueue(context);
+        rand = new RandomString();
     }
 
     public void setCity(String city) {
@@ -79,47 +84,77 @@ public class GMapAPIs {
     }
 
     public void getNearby(String location_string, Integer range, CallBack<ArrayList<PlaceObjectGMaps>> callBack) {
+        Log.i(">>>>>>>>>> ", "getNearby");
         ArrayList<PlaceObjectGMaps> list = new ArrayList<PlaceObjectGMaps>();
-        process_recursive(location_string, range, callBack, list, "");
+        process_recursive(location_string, range, callBack, list, "", 0);
     }
 
-    private void process_recursive(final String location_string, final Integer range, final CallBack<ArrayList<PlaceObjectGMaps>> callBack, ArrayList<PlaceObjectGMaps> list, String next_page_token) {
-        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location="+
+    private void process_recursive(final String location_string, final Integer range, final CallBack<ArrayList<PlaceObjectGMaps>> callBack, ArrayList<PlaceObjectGMaps> list, String next_page_token, int retry) {
+        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" +
                 location_string + "&radius=" +
                 range + "&type=restaurant&keyword=&key=" +
-                api_key + (next_page_token.length() > 0?"&pageToken="+next_page_token:"");
-        Log.i("getNearby > ", url);
+                api_key + (next_page_token.length() > 0 ? "&pagetoken=" + next_page_token : "") +
+                "&app=" + rand.nextString();
+        Log.i("getPage > " + retry, url);
         // Request a string response from the provided URL.
+        if (retry > 5) {
+            callBack.SuccessListener(list);
+            return;
+        }
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
 
+                        //Log.i("Result", response);
                         String obj_data_json = "";
-                        String page_token = "";
+                        JSONObject jsonRoot = null;
                         try {
-                            JSONObject jsonRoot = new JSONObject(response);
-                            String status = jsonRoot.getString("status");
-                            if (status.equals("OK")) {
-                                if (response.contains("next_page_token"))
-                                    page_token = jsonRoot.getString("next_page_token");
+                            jsonRoot = new JSONObject(response);
+                        } catch (JSONException e) { }
 
-                                JSONArray places = jsonRoot.getJSONArray("results");
+                        String page_token = "";
+                        if (jsonRoot != null) {
+
+                            String status = "ERROR";
+                            try {
+                                status = jsonRoot.getString("status");
+                            } catch (JSONException e) { }
+
+                            if (status.equals("OK")) {
+                                try {
+                                    page_token = jsonRoot.getString("next_page_token");
+                                } catch (Exception error) {}
+
+                                JSONArray places = new JSONArray();
+                                try {
+                                    places = jsonRoot.getJSONArray("results");
+                                } catch (Exception e) {}
+
                                 for (int i = 0; i < places.length(); i++) {
-                                    JSONObject place = places.getJSONObject(i);
+                                    JSONObject place = new JSONObject();
+                                    try {
+                                        place = places.getJSONObject(i);
+                                    } catch (Exception e) {}
                                     PlaceObjectGMaps obj = PlaceObjectGMaps.CreateNewFromJson(place.toString());
                                     list.add(obj);
                                 }
+                            } else if (status.equals("INVALID_REQUEST")) {
+                                try {
+                                    TimeUnit.SECONDS.sleep(1);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                process_recursive(location_string, range, callBack, list, next_page_token, retry + 1);
+                                return;
                             }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+
+
+                            if (page_token.length() == 0) {
+                                callBack.SuccessListener(list);
+                            } else
+                                process_recursive(location_string, range, callBack, list, page_token, 0);
                         }
-
-                        if (page_token.length() == 0)
-                            callBack.SuccessListener(list);
-                        else
-                            process_recursive(location_string, range, callBack, list, page_token);
-
                     }
                 }, new Response.ErrorListener() {
             @Override

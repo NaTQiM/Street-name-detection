@@ -73,6 +73,7 @@ import org.tensorflow.lite.examples.detection.utilitis.SetImageViewByUrl;
 import org.tensorflow.lite.examples.detection.utilitis.Tupple;
 
 import java.text.Normalizer;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
@@ -217,53 +218,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             public void CallBackSuccess(Text text) {
                 String label = text.getText().toUpperCase()
                         .replace("\n", " ");
-                boolean is_contains_duong = label.contains("DUONG");
-                String new_label = is_contains_duong ? deAccent(label.replace("DUONG", "")) : deAccent(label);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (streetnames_data.isEmpty())
-                            return;
-
-                        Pair<Integer, String> temp = new Pair<Integer, String>(-1, null);
-                        for (Map.Entry<String, String> item : streetnames_data.entrySet()) {
-                            String key = is_contains_duong ? item.getKey().replace("DUONG ", "") : item.getKey();
-                            int compute = LevenshteinDistanceDP.compute(key.toLowerCase(), new_label.toLowerCase());
-                            LOGGER.i("Compare: " + item.getKey() + " - " + new_label + " => " + compute);
-                            if (temp.first < compute) {
-                                temp = new Pair<Integer, String>(compute, item.getKey());
-                            }
-                        }
-                        int min = (int) (MINIMUM_CONFIDENCE_TEXT_GEN * 100f);
-                        String streetname_json = temp.first < min ? "{}" : streetnames_data.get(temp.second);
-
-                        StreetName streetName = StreetName.createNewFromJson(streetname_json);
-
-                        if (streetName.getName().equals(result_counter.first.getName()))
-                            result_counter.second++;
-                        else {
-                            result_counter.first = streetName;
-                            result_counter.second = 0;
-                        }
-
-                        if (result_counter.second >= 5) {
-                            RunDetector = false;
-                            temp_data = streetName.getName();
-                            runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        detectResult.setText("Đường\n" + result_counter.first.getName());
-                                        detectResult.setVisibility(View.VISIBLE);
-                                        result_counter.first = new StreetName();
-                                        result_counter.second = 0;
-                                    }
-                                });
-                        }
-
-                        tracker.SetLabel(streetName.getName());
-                    }
-                }).start();
+                textGenCallBack(label);
             }
 
             @Override
@@ -272,6 +227,70 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         });
 
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+    }
+
+    private void textGenCallBack(String label) {
+
+        boolean is_contains_duong = label.contains("DUONG");
+        String new_label = is_contains_duong ? deAccent(label.replace("DUONG", "")) : deAccent(label);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (streetnames_data.isEmpty())
+                    return;
+
+                Pair<Integer, String> temp = new Pair<Integer, String>(-1, null);
+                for (Map.Entry<String, String> item : streetnames_data.entrySet()) {
+                    String key = is_contains_duong ? item.getKey().replace("DUONG ", "") : item.getKey();
+                    int compute = LevenshteinDistanceDP.compute(key.toLowerCase(), new_label.toLowerCase());
+                    LOGGER.i("Compare: " + item.getKey() + " - " + new_label + " => " + compute);
+                    if (temp.first < compute) {
+                        temp = new Pair<Integer, String>(compute, item.getKey());
+                    }
+                }
+                int min = (int) (MINIMUM_CONFIDENCE_TEXT_GEN * 100f);
+                String streetname_json = temp.first < min ? "{}" : streetnames_data.get(temp.second);
+
+                StreetName streetName = StreetName.createNewFromJson(streetname_json);
+
+                if (streetName.getName().equals(result_counter.first.getName()))
+                    result_counter.second++;
+                else {
+                    result_counter.first = streetName;
+                    result_counter.second = 0;
+                }
+
+                if (result_counter.second >= 5) {
+                    LOGGER.i("---------------------------------------------------");
+                    RunDetector = false;
+                    temp_data = streetName.getName();
+                    runOnUiThread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                detectResult.setText("Đường\n" + result_counter.first.getName());
+                                detectResult.setVisibility(View.VISIBLE);
+                                result_counter.first = new StreetName();
+                                result_counter.second = 0;
+                            }
+                        });
+                }
+
+                tracker.SetLabel(streetName.getName());
+            }
+        }).start();
     }
 
     @Override
@@ -303,59 +322,59 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             return;
 
         runInBackground(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        LOGGER.i("Running detection on image " + currTimestamp);
-                        final long startTime = SystemClock.uptimeMillis();
-                        final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
-                        lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+            new Runnable() {
+                @Override
+                public void run() {
+                    LOGGER.i("Running detection on image " + currTimestamp);
+                    final long startTime = SystemClock.uptimeMillis();
+                    final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
+                    lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-                        cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-                        final Canvas canvas = new Canvas(cropCopyBitmap);
-                        final Paint paint = new Paint();
-                        paint.setColor(Color.RED);
-                        paint.setStyle(Style.STROKE);
-                        paint.setStrokeWidth(2.0f);
+                    cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                    final Canvas canvas = new Canvas(cropCopyBitmap);
+                    final Paint paint = new Paint();
+                    paint.setColor(Color.RED);
+                    paint.setStyle(Style.STROKE);
+                    paint.setStrokeWidth(2.0f);
 
-                        float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-                        switch (MODE) {
-                            case TF_OD_API:
-                                minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-                                break;
-                        }
-
-                        final List<Detector.Recognition> mappedRecognitions =
-                                new ArrayList<Detector.Recognition>();
-
-                        for (final Detector.Recognition result : results) {
-                            final RectF location = result.getLocation();
-                            if (location != null && result.getConfidence() >= minimumConfidence) {
-                                Bitmap recognitionBitmap = cropBitmap(croppedBitmap, location);
-                                textGeneration.Generate(recognitionBitmap, 0);
-
-                                canvas.drawRect(location, paint);
-                                cropToFrameTransform.mapRect(location);
-
-                                result.setLocation(location);
-                                mappedRecognitions.add(result);
-                                break;
-                            }
-                        }
-
-                        //tracker.trackResults(mappedRecognitions, currTimestamp);
-                        trackingOverlay.postInvalidate();
-
-                        computingDetection = false;
-
-                        runOnUiThread(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                }
-                            });
+                    float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                    switch (MODE) {
+                        case TF_OD_API:
+                            minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                            break;
                     }
-                });
+
+                    final List<Detector.Recognition> mappedRecognitions =
+                            new ArrayList<Detector.Recognition>();
+
+                    for (final Detector.Recognition result : results) {
+                        final RectF location = result.getLocation();
+                        if (location != null && result.getConfidence() >= minimumConfidence) {
+                            Bitmap recognitionBitmap = cropBitmap(croppedBitmap, location);
+                            textGeneration.Generate(recognitionBitmap, 0);
+
+                            canvas.drawRect(location, paint);
+                            cropToFrameTransform.mapRect(location);
+
+                            result.setLocation(location);
+                            mappedRecognitions.add(result);
+                            break;
+                        }
+                    }
+
+                    //tracker.trackResults(mappedRecognitions, currTimestamp);
+                    trackingOverlay.postInvalidate();
+
+                    computingDetection = false;
+
+                    runOnUiThread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                            }
+                        });
+                }
+            });
     }
 
     @Override
@@ -477,10 +496,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             GMAP_APIS.getStreetObject(first_address, new GMapAPIs.CallBack<StreetObjectGMaps>() {
                 @Override
                 public void SuccessListener(StreetObjectGMaps result) {
-                    String location = String.format("%s,%s", result.geometry.location.lat, result.geometry.location.lng);
-                    HashMap<String, PlaceObjectGMaps> list_nearby = new HashMap<>();
+                    Double _lat = Double.parseDouble(result.geometry.location.lat);
+                    Double _lng = Double.parseDouble(result.geometry.location.lng);
+                    Tupple location = new Tupple(_lat, _lng);
+                    Tupple origin = new Tupple(_lat, _lng);
+                    HashMap<String, PlaceObjectGMaps> list_nearby = new HashMap();
                     LOGGER.i("temp_data: " + temp_data);
-                    getPlaceNearbyRecursive(_this, list_nearby, location, temp_data, -1);
+                    getPlaceNearbyRecursive(_this, list_nearby, location, origin, temp_data, -1);
 
                 }
 
@@ -524,40 +546,69 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
     }
 
-    private void getPlaceNearbyRecursive(final Context ctx, HashMap<String, PlaceObjectGMaps> list, String location, final String street, final int limit) {
-        if (limit >= 0 && list.size() >= limit)
-            return;
-
-        GMAP_APIS.getNearby(location, 100, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+    private void getPlaceNearbyRecursive(
+            final Context ctx,
+            HashMap<String, PlaceObjectGMaps> list,
+            Tupple<Double, Double> location,
+            final Tupple<Double, Double> orginal,
+            final String street,
+            final int limit)
+    {
+        GMAP_APIS.getNearby(location.first + "," + location.second, 100, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
-                Tupple<Integer, String> max_address = new Tupple<Integer, String>(0, location);
-                for (PlaceObjectGMaps place : result) {
-                    LOGGER.i(place.vicinity);
-                    String normalized_address = deAccent(place.vicinity).toLowerCase();
-                    Integer address_number = -1;
-                    try {
-                        address_number = Integer.parseUnsignedInt(normalized_address.split(" ")[0]);
-                    }
-                    catch (Exception error) {   }
 
-                    if (normalized_address.contains(deAccent(street).toLowerCase()) && !list.containsKey(place.place_id)) {
-                        if (address_number > max_address.first)
-                        {
-                            max_address.second = String.format("%s,%s", place.geometry.location.lat, place.geometry.location.lng);
-                            max_address.first = address_number;
+                Tupple<Double, Tupple<Double, Double>> max_location = new Tupple(distance(orginal, location), location);
+                LOGGER.i(orginal + " - " + location + " = "+ max_location.toString());
+
+                for (PlaceObjectGMaps place : result) {
+                    //LOGGER.i(place.vicinity);
+
+                    String normalized_address = deAccent(place.vicinity).toLowerCase();
+
+                    if (normalized_address.contains(deAccent(street).toLowerCase())) {
+                        try {
+                            Integer address_num = Integer.parseInt(normalized_address.split(",")[0].replace(deAccent(street).toLowerCase(),"").replace(" ",""));
+                            Double _lat = Double.parseDouble(place.geometry.location.lat);
+                            Double _lng = Double.parseDouble(place.geometry.location.lng);
+                            Tupple<Double, Double> current_location = new Tupple(_lat, _lng);
+                            Double current_distance = distance(orginal, current_location);
+                            LOGGER.i(current_distance.toString() + " - " + current_location);
+                            if (current_distance > max_location.first)
+                            {
+                                max_location.first = current_distance;
+                                max_location.second = current_location;
+                            }
                         }
-                        list.put(place.place_id, place);
-                        LOGGER.i("Nearby: >> " + normalized_address);
+                        catch (Exception error) {
+                            //error.printStackTrace();
+                            }
+
+                        if (!list.containsKey(place.place_id)) {
+                            list.put(place.place_id, place);
+                            LOGGER.i("Nearby: >> " + normalized_address);
+
+                            if (limit >= 0 && list.size() >= limit)
+                            {
+                                finishGetNearby(list);
+                                return;
+                            }
+                        }
                     }
                     else
                     {
-                        LOGGER.i(normalized_address + " - " + deAccent(street).toLowerCase());
+                        LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
                     }
                 }
-                if (!max_address.second.equals(location))
-                    getPlaceNearbyRecursive(ctx, list, max_address.second, street, limit);
+                LOGGER.i("Max: >> " + max_location.second + " - " + max_location.first + "|" + location);
+                if (!max_location.second.equals(location))
+                    getPlaceNearbyRecursive(ctx, list, max_location.second, orginal, street, limit);
+                else
+                {
+                    finishGetNearby(list);
+                    return;
+                }
             }
 
             @Override
@@ -568,6 +619,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     }
 
+    private void finishGetNearby(HashMap<String, PlaceObjectGMaps> list) {
+        LOGGER.i("------------------------------------------------------------------------------");
+        for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
+            LOGGER.i(place.getValue().vicinity);
+        }
+    }
+
+    private Double distance(Tupple<Double, Double> v1, Tupple<Double, Double> v2)
+    {
+        return Math.sqrt(Math.pow(v1.first*10000 -v2.first*10000,2) + Math.pow(v1.first*10000-v2.first*10000,2));
+    }
     @Override
     protected void backToScanStreetNameSign() {
         runOnUiThread(new Runnable() {
@@ -590,4 +652,5 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         Bitmap recognitionBitmap = TextGeneration.cropBitmap(bitmap, box);
         return recognitionBitmap;
     }
+
 }

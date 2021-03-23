@@ -9,4 +9,9 @@ public class Tupple<F, S> {
         this.first = first;
         this.second = second;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Tupple (%s, %s)", first.toString(), second.toString());
+    }
 }
