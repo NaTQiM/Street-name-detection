@@ -227,18 +227,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         });
 
-        LOGGER.i("-----------------------------------------");
-        textGenCallBack("đương Nguyễn vên dấu");
-        LOGGER.i("-----------------------------------------");
-        textGenCallBack("đương Nguyễn vên dấu");
-        LOGGER.i("-----------------------------------------");
-        textGenCallBack("đương Nguyễn vên dấu");
-        LOGGER.i("-----------------------------------------");
-        textGenCallBack("đương Nguyễn vên dấu");
-        LOGGER.i("-----------------------------------------");
-        textGenCallBack("đương Nguyễn vên dấu");
-        LOGGER.i("-----------------------------------------");
-        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
+//        LOGGER.i("-----------------------------------------");
+//        textGenCallBack("đương Nguyễn vên dấu");
     }
 
     private void textGenCallBack(String label) {
