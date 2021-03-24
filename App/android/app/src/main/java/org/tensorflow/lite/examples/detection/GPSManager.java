@@ -130,6 +130,11 @@ public class GPSManager implements LocationListener {
 
         if (isGPSEnable) {
             @SuppressLint("MissingPermission") Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location == null)
+            {
+                callback.Failure();
+                return;
+            }
             callback.Success(location);
             if (isGPSPermissionGranted()) {
                 Log.e("GPS: ", "isGPSEnable");
