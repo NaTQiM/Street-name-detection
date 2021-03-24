@@ -16,7 +16,6 @@
 
 package org.tensorflow.lite.examples.detection;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -73,7 +72,7 @@ import org.tensorflow.lite.examples.detection.utilitis.SetImageViewByUrl;
 import org.tensorflow.lite.examples.detection.utilitis.Tupple;
 
 import java.text.Normalizer;
-import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
@@ -94,7 +93,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
     private static final boolean SAVE_PREVIEW_BITMAP = false;
     private static final float TEXT_SIZE_DIP = 10;
-
 
     private OverlayView trackingOverlay;
     private Integer sensorOrientation;
@@ -127,6 +125,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private int check_for_load_street_nearby = 0;
     private StreetObjectGMaps streetObjectGMaps = null;
     private Location userLocation = null;
+    StreetName streetName;
+    long timeLoadNearby;
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -227,18 +227,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         });
 
-//        LOGGER.i("-----------------------------------------");
-//        textGenCallBack("đương Nguyễn vên dấu");
-//        LOGGER.i("-----------------------------------------");
-//        textGenCallBack("đương Nguyễn vên dấu");
-//        LOGGER.i("-----------------------------------------");
-//        textGenCallBack("đương Nguyễn vên dấu");
-//        LOGGER.i("-----------------------------------------");
-//        textGenCallBack("đương Nguyễn vên dấu");
-//        LOGGER.i("-----------------------------------------");
-//        textGenCallBack("đương Nguyễn vên dấu");
-//        LOGGER.i("-----------------------------------------");
-//        textGenCallBack("đương Nguyễn vên dấu");
+        LOGGER.i("-----------------------------------------");
+        textGenCallBack("đương Nguyễn vên dấu");
+        LOGGER.i("-----------------------------------------");
+        textGenCallBack("đương Nguyễn vên dấu");
+        LOGGER.i("-----------------------------------------");
+        textGenCallBack("đương Nguyễn vên dấu");
+        LOGGER.i("-----------------------------------------");
+        textGenCallBack("đương Nguyễn vên dấu");
+        LOGGER.i("-----------------------------------------");
+        textGenCallBack("đương Nguyễn vên dấu");
+        LOGGER.i("-----------------------------------------");
+        textGenCallBack("đương Nguyễn vên dấu");
     }
 
     private void textGenCallBack(String label) {
@@ -263,7 +263,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 int min = (int) (MINIMUM_CONFIDENCE_TEXT_GEN * 100f);
                 String streetname_json = temp.first < min ? "{}" : streetnames_data.get(temp.second);
 
-                StreetName streetName = StreetName.createNewFromJson(streetname_json);
+                streetName = StreetName.createNewFromJson(streetname_json);
 
                 if (streetName.getName().equals(result_counter.first.getName()))
                     result_counter.second++;
@@ -280,6 +280,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         new Runnable() {
                             @Override
                             public void run() {
+
                                 detectResult.setText("Đường\n" + result_counter.first.getName());
                                 detectResult.setVisibility(View.VISIBLE);
                                 result_counter.first = new StreetName();
@@ -383,6 +384,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             @Override
             public void run() {
                 detectResult.setText("Loading...");
+
             }
         });
         GMAP_APIS.getStreetObject(temp_data, new GMapAPIs.CallBack<StreetObjectGMaps>() {
@@ -399,19 +401,19 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         });
 
-/*        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
+        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
             @Override
             public void Success(Location location) {
-                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> " + location.getAltitude() + " : " + location.getLongitude());
+                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> GPS " + location.getAltitude() + " : " + location.getLongitude());
                 userLocation = location;
-                loadStreetNearby();
+                //loadStreetNearby();
             }
 
             @Override
             public void Failure() {
                 loadStreetNearby();
             }
-        });*/
+        });
     }
 
     @Override
@@ -474,7 +476,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         LOGGER.i(">>>>>>>>>>>>>>>>> i " + check_for_load_street_nearby);
         if (check_for_load_street_nearby == 1) {
             check_for_load_street_nearby = 0;
-
+            timeLoadNearby = System.currentTimeMillis();
             String location = "";
             if (userLocation!=null)
             {
@@ -496,13 +498,24 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             GMAP_APIS.getStreetObject(first_address, new GMapAPIs.CallBack<StreetObjectGMaps>() {
                 @Override
                 public void SuccessListener(StreetObjectGMaps result) {
-                    Double _lat = Double.parseDouble(result.geometry.location.lat);
-                    Double _lng = Double.parseDouble(result.geometry.location.lng);
+                    Double _lat = Double.parseDouble(streetObjectGMaps.geometry.location.lat);
+                    Double _lng = Double.parseDouble(streetObjectGMaps.geometry.location.lng);
                     Tupple location = new Tupple(_lat, _lng);
                     Tupple origin = new Tupple(_lat, _lng);
                     HashMap<String, PlaceObjectGMaps> list_nearby = new HashMap();
                     LOGGER.i("temp_data: " + temp_data);
+
+
                     getPlaceNearbyRecursive(_this, list_nearby, location, origin, temp_data, -1);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            streetViewName.setText(streetObjectGMaps.name);
+                            detectResult.setVisibility(View.INVISIBLE);
+                            streetView.setVisibility(View.VISIBLE);
+                        }
+                    });
 
                 }
 
@@ -512,37 +525,37 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
             });
 
-//            GMAP_APIS.getNearby(location, 1500, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
-//                @Override
-//                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
-//                    LOGGER.i(">>>>>>>>>>>>>>>>>" + result.size());
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            for (PlaceObjectGMaps place: result) {
-//                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
-//
-//                                LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
-//                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
-//                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
-//                                textView.setText(place.name);
-//                                listNearByPlaces.addView(placeObjectUI);
-//                            }
-//                            streetViewName.setText(streetObjectGMaps.name);
-//                            detectResult.setVisibility(View.INVISIBLE);
-//                            streetView.setVisibility(View.VISIBLE);
-//                        }
-//                    });
-//
-//                }
-//
-//                @Override
-//                public void FailureListener(String error) {
-//                    LOGGER.i("ERROR" + error);
-//                    backToScanStreetNameSign();
-//                    userLocation = null;
-//                }
-//            });
+            GMAP_APIS.getNearby(location, 1500, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+                @Override
+                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
+                    LOGGER.i(">>>>>>>>>>>>>>>>>" + result.size());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (PlaceObjectGMaps place: result) {
+                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
+
+                                LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
+                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
+                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
+                                textView.setText(place.name);
+                                listNearByPlaces.addView(placeObjectUI);
+                            }
+                            streetViewName.setText(streetObjectGMaps.name);
+                            detectResult.setVisibility(View.INVISIBLE);
+                            streetView.setVisibility(View.VISIBLE);
+                        }
+                    });
+
+                }
+
+                @Override
+                public void FailureListener(String error) {
+                    LOGGER.i("ERROR" + error);
+                    backToScanStreetNameSign();
+                    userLocation = null;
+                }
+            });
         }
     }
 
@@ -554,13 +567,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             final String street,
             final int limit)
     {
-        GMAP_APIS.getNearby(location.first + "," + location.second, 100, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+        HashMap<String, PlaceObjectGMaps> temp_list = new HashMap<>();
+        GMAP_APIS.getNearby(location.first + "," + location.second, 180, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
 
                 Tupple<Double, Tupple<Double, Double>> max_location = new Tupple(distance(orginal, location), location);
-                LOGGER.i(orginal + " - " + location + " = "+ max_location.toString());
+                //LOGGER.i(orginal + " - " + location + " = "+ max_location.toString());
 
                 for (PlaceObjectGMaps place : result) {
                     //LOGGER.i(place.vicinity);
@@ -574,7 +588,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             Double _lng = Double.parseDouble(place.geometry.location.lng);
                             Tupple<Double, Double> current_location = new Tupple(_lat, _lng);
                             Double current_distance = distance(orginal, current_location);
-                            LOGGER.i(current_distance.toString() + " - " + current_location);
+                            //LOGGER.i(current_distance.toString() + " - " + current_location);
                             if (current_distance > max_location.first)
                             {
                                 max_location.first = current_distance;
@@ -586,27 +600,32 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             }
 
                         if (!list.containsKey(place.place_id)) {
-                            list.put(place.place_id, place);
-                            LOGGER.i("Nearby: >> " + normalized_address);
+                            temp_list.put(place.place_id, place);
+                            //list.put(place.place_id, place);
+
+                            //LOGGER.i("Nearby: >> " + normalized_address);
 
                             if (limit >= 0 && list.size() >= limit)
                             {
-                                finishGetNearby(list);
+                                //finishGetNearby(list);
                                 return;
                             }
                         }
                     }
                     else
                     {
-                        LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
+                        //LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
                     }
                 }
-                LOGGER.i("Max: >> " + max_location.second + " - " + max_location.first + "|" + location);
+                //LOGGER.i("Max: >> " + max_location.second + " - " + max_location.first + "|" + location);
+                updateGetNearbyToUI(temp_list);
+                list.putAll(temp_list);
                 if (!max_location.second.equals(location))
                     getPlaceNearbyRecursive(ctx, list, max_location.second, orginal, street, limit);
                 else
                 {
-                    finishGetNearby(list);
+                    LOGGER.i(" >>>> TIME: " +  (System.currentTimeMillis()) + ", "+ (timeLoadNearby) + " = " + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - timeLoadNearby));
+                    //finishGetNearby(list);
                     return;
                 }
             }
@@ -620,13 +639,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     }
 
-    private void finishGetNearby(HashMap<String, PlaceObjectGMaps> list) {
+    private void updateGetNearbyToUI(HashMap<String, PlaceObjectGMaps> list) {
         LOGGER.i("------------------------------------------------------------------------------");
-        for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
-            LOGGER.i(place.getValue().vicinity);
-        }
+//        for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
+//            LOGGER.i(place.getValue().vicinity);
+//        }
         Context _this = this;
-        LOGGER.i(">>>>>>>>>>>>>>>>>" + list.size());
+        LOGGER.i(">>>>>>>>>>>>>>>>> Size: " + list.size());
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -636,15 +655,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                     LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
 
-                    LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
+                    //LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
                     new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
                     TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
                     textView.setText(place.name);
                     listNearByPlaces.addView(placeObjectUI);
                 }
-                streetViewName.setText(streetObjectGMaps.name);
-                detectResult.setVisibility(View.INVISIBLE);
-                streetView.setVisibility(View.VISIBLE);
             }
         });
     }

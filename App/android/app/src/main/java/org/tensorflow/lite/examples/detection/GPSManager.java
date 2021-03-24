@@ -33,8 +33,10 @@ public class GPSManager implements LocationListener {
         try {
             isGPSEnable = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         } catch (Exception ex) {
+            Log.e(" ERORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", " GPS");
         }
-
+        if (isGPSPermissionGranted())
+            requestForLocation();
         this.request_code = request_code;
     }
 
@@ -125,21 +127,28 @@ public class GPSManager implements LocationListener {
     }
 
     public void GetLocation(OnGetLocation callback) {
-        if (isGPSEnable) {
-            if (isGPSPermissionGranted()) {
 
-                if (locationAvailable)
-                    callback.Success(location);
+        if (isGPSEnable) {
+            @SuppressLint("MissingPermission") Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            callback.Success(location);
+            if (isGPSPermissionGranted()) {
+                Log.e("GPS: ", "isGPSEnable");
+                if (locationAvailable) {
+                    Log.e("GPS: ", "available");
+                    //callback.Success(location);
+                }
                 else {
+                    Log.e("GPS: ", "request");
                     requestForLocation();
-                    onGetLocation = callback;
+                    //onGetLocation = callback;
                 }
 
             } else {
-                onGetLocation = callback;
+                //onGetLocation = callback;
                 requestGPSPermission();
             }
         } else {
+            Log.e("GPS: ", "isGPSDisable");
             callback.Failure();
         }
     }
