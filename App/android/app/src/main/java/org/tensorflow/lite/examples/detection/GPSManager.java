@@ -33,7 +33,7 @@ public class GPSManager implements LocationListener {
         try {
             isGPSEnable = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         } catch (Exception ex) {
-            Log.e(" ERORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", " GPS");
+            Log.e(" ERROR", " GPS");
         }
         if (isGPSPermissionGranted())
             requestForLocation();
@@ -126,10 +126,14 @@ public class GPSManager implements LocationListener {
         isGPSEnable = false;
     }
 
+    @SuppressLint("MissingPermission")
     public void GetLocation(OnGetLocation callback) {
 
         if (isGPSEnable) {
-            @SuppressLint("MissingPermission") Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            Location location = null;
+            if (isGPSPermissionGranted())
+                location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
             if (location == null)
             {
                 callback.Failure();

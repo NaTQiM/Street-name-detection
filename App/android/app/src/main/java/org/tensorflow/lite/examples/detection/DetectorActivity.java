@@ -401,74 +401,19 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         });
 
-        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
-            @Override
-            public void Success(Location location) {
-                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> GPS " + location.getAltitude() + " : " + location.getLongitude());
-                userLocation = location;
-                //loadStreetNearby();
-            }
-
-            @Override
-            public void Failure() {
-                loadStreetNearby();
-            }
-        });
-    }
-
-    @Override
-    protected int getLayoutId() {
-        return R.layout.tfe_od_camera_connection_fragment_tracking;
-    }
-
-    @Override
-    protected Size getDesiredPreviewFrameSize() {
-        return DESIRED_PREVIEW_SIZE;
-    }
-
-    // Which detection model to use: by default uses Tensorflow Object Detection API frozen
-    // checkpoints.
-    private enum DetectorMode {
-        TF_OD_API;
-    }
-
-    @Override
-    protected void setUseNNAPI(final boolean isChecked) {
-        runInBackground(
-            () -> {
-                try {
-                    detector.setUseNNAPI(isChecked);
-                } catch (UnsupportedOperationException e) {
-                    LOGGER.e(e, "Failed to set \"Use NNAPI\".");
-                    runOnUiThread(
-                        () -> {
-                            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                        });
-                }
-            });
-    }
-
-
-    public String loadJSONFromAsset(String file) {
-        String json = "{\"null\":\"empty\"}";
-        try {
-            InputStream is = getAssets().open(file);
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
-    }
-
-    public String deAccent(String str) {
-        String nfdNormalizedString = Normalizer.normalize(str, Normalizer.Form.NFD);
-        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
-        return pattern.matcher(nfdNormalizedString).replaceAll("");
+//        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
+//            @Override
+//            public void Success(Location location) {
+//                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> GPS " + location.getAltitude() + " : " + location.getLongitude());
+//                userLocation = location;
+//                //loadStreetNearby();
+//            }
+//
+//            @Override
+//            public void Failure() {
+//                loadStreetNearby();
+//            }
+//        });
     }
 
     private void loadStreetNearby() {
@@ -494,12 +439,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             LOGGER.i(">>>>>>>>>>>>>>>>>>>>> LOCATION " + location);
             String first_address = "01 " + temp_data;
             final Context _this = this;
-            LOGGER.i("<<<<<<" + first_address);
+            LOGGER.i("<<<<<< " + first_address);
             GMAP_APIS.getStreetObject(first_address, new GMapAPIs.CallBack<StreetObjectGMaps>() {
                 @Override
                 public void SuccessListener(StreetObjectGMaps result) {
-                    Double _lat = Double.parseDouble(streetObjectGMaps.geometry.location.lat);
-                    Double _lng = Double.parseDouble(streetObjectGMaps.geometry.location.lng);
+                    Double _lat = Double.parseDouble(result.geometry.location.lat);
+                    Double _lng = Double.parseDouble(result.geometry.location.lng);
                     Tupple location = new Tupple(_lat, _lng);
                     Tupple origin = new Tupple(_lat, _lng);
                     HashMap<String, PlaceObjectGMaps> list_nearby = new HashMap();
@@ -525,37 +470,37 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
             });
 
-            GMAP_APIS.getNearby(location, 1500, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
-                @Override
-                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
-                    LOGGER.i(">>>>>>>>>>>>>>>>>" + result.size());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (PlaceObjectGMaps place: result) {
-                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
-
-                                LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
-                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
-                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
-                                textView.setText(place.name);
-                                listNearByPlaces.addView(placeObjectUI);
-                            }
-                            streetViewName.setText(streetObjectGMaps.name);
-                            detectResult.setVisibility(View.INVISIBLE);
-                            streetView.setVisibility(View.VISIBLE);
-                        }
-                    });
-
-                }
-
-                @Override
-                public void FailureListener(String error) {
-                    LOGGER.i("ERROR" + error);
-                    backToScanStreetNameSign();
-                    userLocation = null;
-                }
-            });
+//            GMAP_APIS.getNearby(location, 150, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+//                @Override
+//                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
+//                    LOGGER.i(">>>>>>>>>>>>>>>>> " + result.size());
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            for (PlaceObjectGMaps place: result) {
+//                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
+//
+//                                //LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
+//                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
+//                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
+//                                textView.setText(place.name);
+//                                listNearByPlaces.addView(placeObjectUI);
+//                            }
+//                            streetViewName.setText(streetObjectGMaps.name);
+//                            detectResult.setVisibility(View.INVISIBLE);
+//                            streetView.setVisibility(View.VISIBLE);
+//                        }
+//                    });
+//
+//                }
+//
+//                @Override
+//                public void FailureListener(String error) {
+//                    LOGGER.i("ERROR" + error);
+//                    backToScanStreetNameSign();
+//                    userLocation = null;
+//                }
+//            });
         }
     }
 
@@ -568,12 +513,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             final int limit)
     {
         HashMap<String, PlaceObjectGMaps> temp_list = new HashMap<>();
-        GMAP_APIS.getNearby(location.first + "," + location.second, 180, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
+        GMAP_APIS.getNearby(location.first + "," + location.second, 80, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
 
                 Tupple<Double, Tupple<Double, Double>> max_location = new Tupple(distance(orginal, location), location);
+                String max_address = "";
                 //LOGGER.i(orginal + " - " + location + " = "+ max_location.toString());
 
                 for (PlaceObjectGMaps place : result) {
@@ -582,8 +528,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     String normalized_address = deAccent(place.vicinity).toLowerCase();
 
                     if (normalized_address.contains(deAccent(street).toLowerCase())) {
-                        try {
-                            Integer address_num = Integer.parseInt(normalized_address.split(",")[0].replace(deAccent(street).toLowerCase(),"").replace(" ",""));
+                         String address_num_string = normalized_address.split(",")[0].replace(deAccent(street).toLowerCase(),"").replace(" ","");
+
+                        if (address_num_string.matches("[0-9]+[a-zA-Z]?"))
+                        {
                             Double _lat = Double.parseDouble(place.geometry.location.lat);
                             Double _lng = Double.parseDouble(place.geometry.location.lng);
                             Tupple<Double, Double> current_location = new Tupple(_lat, _lng);
@@ -593,17 +541,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             {
                                 max_location.first = current_distance;
                                 max_location.second = current_location;
+                                max_address = place.vicinity;
                             }
                         }
-                        catch (Exception error) {
-                            //error.printStackTrace();
-                            }
 
                         if (!list.containsKey(place.place_id)) {
                             temp_list.put(place.place_id, place);
                             //list.put(place.place_id, place);
 
-                            //LOGGER.i("Nearby: >> " + normalized_address);
+                            LOGGER.i("Nearby: >> " + normalized_address);
 
                             if (limit >= 0 && list.size() >= limit)
                             {
@@ -611,13 +557,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                                 return;
                             }
                         }
+                        else
+                        {
+                            LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
+                        }
                     }
                     else
                     {
-                        //LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
+                        LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
                     }
                 }
-                //LOGGER.i("Max: >> " + max_location.second + " - " + max_location.first + "|" + location);
+                LOGGER.i("Max: >> " + max_location.second + " - " + max_location.first + " | " + max_address);
                 updateGetNearbyToUI(temp_list);
                 list.putAll(temp_list);
                 if (!max_location.second.equals(location))
@@ -625,6 +575,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 else
                 {
                     LOGGER.i(" >>>> TIME: " +  (System.currentTimeMillis()) + ", "+ (timeLoadNearby) + " = " + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - timeLoadNearby));
+                    LOGGER.i("------------------------------------------------------------------------------");
+                    //        for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
+                    //            LOGGER.i(place.getValue().vicinity);
+                    //        }
+                    LOGGER.i(">>>>>>>>>>>>>>>>> Size: " + list.size());
                     //finishGetNearby(list);
                     return;
                 }
@@ -640,12 +595,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
 
     private void updateGetNearbyToUI(HashMap<String, PlaceObjectGMaps> list) {
-        LOGGER.i("------------------------------------------------------------------------------");
-//        for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
-//            LOGGER.i(place.getValue().vicinity);
-//        }
         Context _this = this;
-        LOGGER.i(">>>>>>>>>>>>>>>>> Size: " + list.size());
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -667,7 +617,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     private Double distance(Tupple<Double, Double> v1, Tupple<Double, Double> v2)
     {
-        return Math.sqrt(Math.pow(v1.first*10000 -v2.first*10000,2) + Math.pow(v1.first*10000-v2.first*10000,2));
+        return Math.sqrt(Math.pow(v1.first*10000 - v2.first*10000,2) + Math.pow(v1.first*10000 - v2.first*10000,2));
     }
     @Override
     protected void backToScanStreetNameSign() {
@@ -691,5 +641,62 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         Bitmap recognitionBitmap = TextGeneration.cropBitmap(bitmap, box);
         return recognitionBitmap;
     }
+
+
+    @Override
+    protected int getLayoutId() {
+        return R.layout.tfe_od_camera_connection_fragment_tracking;
+    }
+
+    @Override
+    protected Size getDesiredPreviewFrameSize() {
+        return DESIRED_PREVIEW_SIZE;
+    }
+
+    // Which detection model to use: by default uses Tensorflow Object Detection API frozen
+    // checkpoints.
+    private enum DetectorMode {
+        TF_OD_API;
+    }
+
+    @Override
+    protected void setUseNNAPI(final boolean isChecked) {
+        runInBackground(
+                () -> {
+                    try {
+                        detector.setUseNNAPI(isChecked);
+                    } catch (UnsupportedOperationException e) {
+                        LOGGER.e(e, "Failed to set \"Use NNAPI\".");
+                        runOnUiThread(
+                                () -> {
+                                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                                });
+                    }
+                });
+    }
+
+
+    public String loadJSONFromAsset(String file) {
+        String json = "{\"null\":\"empty\"}";
+        try {
+            InputStream is = getAssets().open(file);
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+    }
+
+    public String deAccent(String str) {
+        String nfdNormalizedString = Normalizer.normalize(str, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(nfdNormalizedString).replaceAll("");
+    }
+
 
 }

@@ -95,7 +95,7 @@ public class GMapAPIs {
         String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" +
                 "location=" + location_string +
                 "&radius=" + range +
-                "&type=restaurant&keyword=&key=" + (retry%2==1?api_key:api_2) +
+                "&type=restaurant&keyword=&key=" + (retry%2==0?api_key:api_2) +
                 (next_page_token.length() > 0 ? "&pagetoken=" + next_page_token : "") +
                 "&app=" + rand.nextString();
         //Log.i("getPage > " + retry, url);
