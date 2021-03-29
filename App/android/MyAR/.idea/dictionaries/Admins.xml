@@ -2,13 +2,20 @@
   <dictionary name="Admins">
     <words>
       <w>autofocus</w>
+      <w>coef</w>
       <w>gmap</w>
+      <w>labelmap</w>
       <w>levenshtein</w>
+      <w>marvy</w>
       <w>marvyco</w>
       <w>mlkit</w>
       <w>myar</w>
+      <w>nnapi</w>
+      <w>streetname</w>
+      <w>streetnames</w>
       <w>tensorflow</w>
       <w>tflite</w>
+      <w>đường</w>
     </words>
   </dictionary>
 </component>

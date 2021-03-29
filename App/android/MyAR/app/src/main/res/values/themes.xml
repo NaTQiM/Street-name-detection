@@ -15,9 +15,9 @@
     </style>
 
     <color name="purple_500">#8000FF</color>
-    <color name="purple_700">#4614FF</color>
     <color name="teal_200">#B136F4</color>
     <color name="black">#292929</color>
     <color name="white">#CACACA</color>
     <color name="teal_700">#006E99</color>
+    <color name="purple_700">#6400F0</color>
 </resources>

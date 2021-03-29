@@ -16,7 +16,7 @@
 
 package marvyco.myar;
 
-import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -24,30 +24,23 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.Build;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import com.google.gson.JsonIOException;
 import com.google.mlkit.vision.text.Text;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -59,25 +52,17 @@ import org.json.JSONObject;
 import org.tensorflow.lite.detection.tflite.Detector;
 import org.tensorflow.lite.detection.tflite.TFLiteObjectDetectionAPIModel;
 
-import marvyco.myar.R;
-
 import marvyco.myar.customview.OverlayView;
 import marvyco.myar.env.BorderedText;
 import marvyco.myar.env.ImageUtils;
 import marvyco.myar.env.Logger;
-import marvyco.myar.objectdata.PlaceObjectGMaps;
 import marvyco.myar.objectdata.StreetObjectGMaps;
 import marvyco.myar.tracking.MultiBoxTracker;
-import marvyco.myar.utilitis.GMapAPIs;
 import marvyco.myar.utilitis.LevenshteinDistanceDP;
-import marvyco.myar.utilitis.SetImageViewByUrl;
 import marvyco.myar.utilitis.Tupple;
+import marvyco.myar.utilitis.Utility;
 
-import java.text.Normalizer;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-
-public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
+public class StreetDetectionActivity extends CameraActivity implements OnImageAvailableListener {
     public static final Logger LOGGER = new Logger();
 
     // Configuration values for the prepackaged SSD model.
@@ -127,7 +112,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private int check_for_load_street_nearby = 0;
     private StreetObjectGMaps streetObjectGMaps = null;
     private Location userLocation = null;
-    StreetName streetName;
+    static public StreetName currentStreetName;
     long timeLoadNearby;
 
     @Override
@@ -198,7 +183,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
 
-        String street_name_string = loadJSONFromAsset(STREET_NAME_DATA_FILE);
+        String street_name_string = Utility.loadJSONFromAsset(this, STREET_NAME_DATA_FILE);
         try {
             JSONObject jsonObject = new JSONObject(street_name_string);
             Iterator<String> keys = jsonObject.keys();
@@ -246,52 +231,54 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private void textGenCallBack(String label) {
 
         boolean is_contains_duong = label.contains("DUONG");
-        String new_label = is_contains_duong ? deAccent(label.replace("DUONG", "")) : deAccent(label);
+        String new_label = is_contains_duong ? Utility.deAccent(label.replace("DUONG", "")) : Utility.deAccent(label);
         new Thread(new Runnable() {
             @Override
             public void run() {
                 if (streetnames_data.isEmpty())
                     return;
 
-                Pair<Integer, String> temp = new Pair<Integer, String>(-1, null);
+                final ArrayList<Pair<Integer, String>> temp = new ArrayList<Pair<Integer, String>>();
+                temp.add(new Pair<Integer, String>(-1, ""));
                 for (Map.Entry<String, String> item : streetnames_data.entrySet()) {
                     String key = is_contains_duong ? item.getKey().replace("DUONG ", "") : item.getKey();
                     int compute = LevenshteinDistanceDP.compute(key.toLowerCase(), new_label.toLowerCase());
                     LOGGER.i("Compare: " + item.getKey() + " - " + new_label + " => " + compute);
-                    if (temp.first < compute) {
-                        temp = new Pair<Integer, String>(compute, item.getKey());
+                    if (temp.get(0).first < compute) {
+                        temp.set(0, new Pair<Integer, String>(compute, item.getKey()));
                     }
                 }
                 int min = (int) (MINIMUM_CONFIDENCE_TEXT_GEN * 100f);
-                String streetname_json = temp.first < min ? "{}" : streetnames_data.get(temp.second);
+                String streetname_json = temp.get(0).first < min ? "{}" : streetnames_data.get(temp.get(0).second);
 
-                streetName = StreetName.createNewFromJson(streetname_json);
+                                currentStreetName = StreetName.createNewFromJson(streetname_json);
 
-                if (streetName.getName().equals(result_counter.first.getName()))
+                if (currentStreetName.getName().equals(result_counter.first.getName()))
                     result_counter.second++;
                 else {
-                    result_counter.first = streetName;
+                    result_counter.first = currentStreetName;
                     result_counter.second = 0;
                 }
 
                 if (result_counter.second >= 5) {
                     LOGGER.i("---------------------------------------------------");
-                    RunDetector = false;
-                    temp_data = streetName.getName();
+                    temp_data = currentStreetName.getName();
                     runOnUiThread(
                         new Runnable() {
                             @Override
                             public void run() {
 
-                                detectResult.setText("Đường\n" + result_counter.first.getName());
-                                detectResult.setVisibility(View.VISIBLE);
+                                Intent intentPopupResult = new Intent(StreetDetectionActivity.this, StreetDetectionResultPopup.class);
+
+                                startActivity(intentPopupResult);
+
                                 result_counter.first = new StreetName();
                                 result_counter.second = 0;
                             }
                         });
                 }
 
-                tracker.SetLabel(streetName.getName());
+                tracker.SetLabel(currentStreetName.getName());
             }
         }).start();
     }
@@ -321,9 +308,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         if (SAVE_PREVIEW_BITMAP) {
             ImageUtils.saveBitmap(croppedBitmap);
         }
-        if (!RunDetector)
-            return;
-
         runInBackground(
             new Runnable() {
                 @Override
@@ -353,7 +337,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     for (final Detector.Recognition result : results) {
                         final RectF location = result.getLocation();
                         if (location != null && result.getConfidence() >= minimumConfidence) {
-                            Bitmap recognitionBitmap = cropBitmap(croppedBitmap, location);
+                            Bitmap recognitionBitmap = Utility.cropBitmap(croppedBitmap, location);
                             textGeneration.Generate(recognitionBitmap, 0);
 
                             canvas.drawRect(location, paint);
@@ -379,271 +363,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
             });
     }
-
-    @Override
-    protected void ShowData() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                detectResult.setText("Loading...");
-
-            }
-        });
-        GMAP_APIS.getStreetObject(temp_data, new GMapAPIs.CallBack<StreetObjectGMaps>() {
-            @Override
-            public void SuccessListener(StreetObjectGMaps street) {
-                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> " + street.formatted_address);
-                streetObjectGMaps = street;
-                loadStreetNearby();
-            }
-
-            @Override
-            public void FailureListener(String error) {
-                loadStreetNearby();
-            }
-        });
-
-//        gpsManager.GetLocation(new GPSManager.OnGetLocation() {
-//            @Override
-//            public void Success(Location location) {
-//                LOGGER.i(" >>>>>>>>>>>>>>>>>>>>>> GPS " + location.getAltitude() + " : " + location.getLongitude());
-//                userLocation = location;
-//                //loadStreetNearby();
-//            }
-//
-//            @Override
-//            public void Failure() {
-//                loadStreetNearby();
-//            }
-//        });
-    }
-
-    private void loadStreetNearby() {
-        check_for_load_street_nearby++;
-        LOGGER.i(">>>>>>>>>>>>>>>>> i " + check_for_load_street_nearby);
-        if (check_for_load_street_nearby == 1) {
-            check_for_load_street_nearby = 0;
-            timeLoadNearby = System.currentTimeMillis();
-            String location = "";
-            if (userLocation!=null)
-            {
-                location = userLocation.getLatitude() + "," + userLocation.getLongitude();
-            }
-            else if (streetObjectGMaps!=null){
-                location = streetObjectGMaps.geometry.location.lat + "," + streetObjectGMaps.geometry.location.lng;
-            }
-            else
-            {
-                backToScanStreetNameSign();
-                userLocation = null;
-                return;
-            }
-            LOGGER.i(">>>>>>>>>>>>>>>>>>>>> LOCATION " + location);
-            String first_address = "01 " + temp_data;
-            final Context _this = this;
-            LOGGER.i("<<<<<< " + first_address);
-            GMAP_APIS.getStreetObject(first_address, new GMapAPIs.CallBack<StreetObjectGMaps>() {
-                @Override
-                public void SuccessListener(StreetObjectGMaps result) {
-                    Double _lat = Double.parseDouble(result.geometry.location.lat);
-                    Double _lng = Double.parseDouble(result.geometry.location.lng);
-                    Tupple location = new Tupple(_lat, _lng);
-                    Tupple origin = new Tupple(_lat, _lng);
-                    HashMap<String, PlaceObjectGMaps> list_nearby = new HashMap();
-                    LOGGER.i("temp_data: " + temp_data);
-
-
-                    getPlaceNearbyRecursive(_this, list_nearby, location, origin, temp_data, -1);
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            streetViewName.setText(streetObjectGMaps.name);
-                            detectResult.setVisibility(View.INVISIBLE);
-                            streetView.setVisibility(View.VISIBLE);
-                        }
-                    });
-
-                }
-
-                @Override
-                public void FailureListener(String error) {
-
-                }
-            });
-
-//            GMAP_APIS.getNearby(location, 150, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
-//                @Override
-//                public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
-//                    LOGGER.i(">>>>>>>>>>>>>>>>> " + result.size());
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            for (PlaceObjectGMaps place: result) {
-//                                LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
-//
-//                                //LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
-//                                new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
-//                                TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
-//                                textView.setText(place.name);
-//                                listNearByPlaces.addView(placeObjectUI);
-//                            }
-//                            streetViewName.setText(streetObjectGMaps.name);
-//                            detectResult.setVisibility(View.INVISIBLE);
-//                            streetView.setVisibility(View.VISIBLE);
-//                        }
-//                    });
-//
-//                }
-//
-//                @Override
-//                public void FailureListener(String error) {
-//                    LOGGER.i("ERROR" + error);
-//                    backToScanStreetNameSign();
-//                    userLocation = null;
-//                }
-//            });
-        }
-    }
-
-    private void getPlaceNearbyRecursive(
-            final Context ctx,
-            HashMap<String, PlaceObjectGMaps> list,
-            Tupple<Double, Double> location,
-            final Tupple<Double, Double> orginal,
-            final String street,
-            final int limit)
-    {
-        HashMap<String, PlaceObjectGMaps> temp_list = new HashMap<>();
-        GMAP_APIS.getNearby(location.first + "," + location.second, 80, new GMapAPIs.CallBack<ArrayList<PlaceObjectGMaps>>() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void SuccessListener(ArrayList<PlaceObjectGMaps> result) {
-
-                Tupple<Double, Tupple<Double, Double>> max_location = new Tupple(distance(orginal, location), location);
-                String max_address = "";
-                //LOGGER.i(orginal + " - " + location + " = "+ max_location.toString());
-
-                for (PlaceObjectGMaps place : result) {
-                    //LOGGER.i(place.vicinity);
-
-                    String normalized_address = deAccent(place.vicinity).toLowerCase();
-
-                    if (normalized_address.contains(deAccent(street).toLowerCase())) {
-                         String address_num_string = normalized_address.split(",")[0].replace(deAccent(street).toLowerCase(),"").replace(" ","");
-
-                        if (address_num_string.matches("[0-9]+[a-zA-Z]?"))
-                        {
-                            Double _lat = Double.parseDouble(place.geometry.location.lat);
-                            Double _lng = Double.parseDouble(place.geometry.location.lng);
-                            Tupple<Double, Double> current_location = new Tupple(_lat, _lng);
-                            Double current_distance = distance(orginal, current_location);
-                            //LOGGER.i(current_distance.toString() + " - " + current_location);
-                            if (current_distance > max_location.first)
-                            {
-                                max_location.first = current_distance;
-                                max_location.second = current_location;
-                                max_address = place.vicinity;
-                            }
-                        }
-
-                        if (!list.containsKey(place.place_id)) {
-                            temp_list.put(place.place_id, place);
-                            //list.put(place.place_id, place);
-
-                            LOGGER.i("Nearby: >> " + normalized_address);
-
-                            if (limit >= 0 && list.size() >= limit)
-                            {
-                                //finishGetNearby(list);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
-                        }
-                    }
-                    else
-                    {
-                        LOGGER.i(" >> " + normalized_address + " - " + deAccent(street).toLowerCase());
-                    }
-                }
-                LOGGER.i("Max: >> " + max_location.second + " - " + max_location.first + " | " + max_address);
-                updateGetNearbyToUI(temp_list);
-                list.putAll(temp_list);
-                if (!max_location.second.equals(location))
-                    getPlaceNearbyRecursive(ctx, list, max_location.second, orginal, street, limit);
-                else
-                {
-                    LOGGER.i(" >>>> TIME: " +  (System.currentTimeMillis()) + ", "+ (timeLoadNearby) + " = " + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - timeLoadNearby));
-                    LOGGER.i("------------------------------------------------------------------------------");
-                    //        for (Map.Entry<String, PlaceObjectGMaps> place: list.entrySet()) {
-                    //            LOGGER.i(place.getValue().vicinity);
-                    //        }
-                    LOGGER.i(">>>>>>>>>>>>>>>>> Size: " + list.size());
-                    //finishGetNearby(list);
-                    return;
-                }
-            }
-
-            @Override
-            public void FailureListener(String error) {
-                backToScanStreetNameSign();
-                userLocation = null;
-            }
-        });
-
-    }
-
-    private void updateGetNearbyToUI(HashMap<String, PlaceObjectGMaps> list) {
-        Context _this = this;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<String, PlaceObjectGMaps> item: list.entrySet()) {
-
-                    PlaceObjectGMaps place = item.getValue();
-
-                    LinearLayout placeObjectUI = (LinearLayout) View.inflate(_this, R.layout.street_object, null);
-
-                    //LOGGER.i(">>>>>>>>>>>>>>>>> icon " + place.icon);
-                    new SetImageViewByUrl((ImageView)placeObjectUI.findViewById(R.id.imageView)).execute(place.icon);
-                    TextView textView = (TextView)placeObjectUI.findViewById(R.id.textView);
-                    textView.setText(place.name);
-                    listNearByPlaces.addView(placeObjectUI);
-                }
-            }
-        });
-    }
-
-    private Double distance(Tupple<Double, Double> v1, Tupple<Double, Double> v2)
-    {
-        return Math.sqrt(Math.pow(v1.first*10000 - v2.first*10000,2) + Math.pow(v1.first*10000 - v2.first*10000,2));
-    }
-    @Override
-    protected void backToScanStreetNameSign() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                streetView.setVisibility(View.INVISIBLE);
-                RunDetector = true;
-                computingDetection = false;
-            }
-        });
-    }
-
-    public static Bitmap cropBitmap(Bitmap bitmap, RectF size) {
-        Rect box = new Rect();
-        box.left = (int) size.left;
-        box.top = (int) size.top;
-        box.right = (int) size.right;
-        box.bottom = (int) size.bottom;
-
-        Bitmap recognitionBitmap = TextGeneration.cropBitmap(bitmap, box);
-        return recognitionBitmap;
-    }
-
 
     @Override
     protected int getLayoutId() {
@@ -677,25 +396,4 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 });
     }
 
-    public String loadJSONFromAsset(String file) {
-        String json = "{\"null\":\"empty\"}";
-        try {
-            InputStream is = getAssets().open(file);
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
-    }
-
-    public String deAccent(String str) {
-        String nfdNormalizedString = Normalizer.normalize(str, Normalizer.Form.NFD);
-        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
-        return pattern.matcher(nfdNormalizedString).replaceAll("");
-    }
 }

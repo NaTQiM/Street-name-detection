@@ -66,8 +66,6 @@ public abstract class CameraActivity extends AppCompatActivity
     private static final Logger LOGGER = new Logger();
 
     protected static final int PERMISSIONS_REQUEST = 1;
-    protected static final int REQUEST_PGS_PERMISSION_CODE = 2;
-    private static final String API_KEY = "AIzaSyAdPZ4-QUW2nsW8xswNQjB2lRoaBOPkO1s";
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
     protected int previewWidth = 0;
@@ -83,24 +81,6 @@ public abstract class CameraActivity extends AppCompatActivity
     private Runnable postInferenceCallback;
     private Runnable imageConverter;
 
-    private BottomSheetBehavior<LinearLayout> sheetBehavior;
-
-    protected GMapAPIs GMAP_APIS;
-
-    public boolean RunDetector = true;
-
-    protected GPSManager gpsManager;
-    protected Button detectResult;
-
-    // UI
-    protected LinearLayout bottomSheetLayout;
-    protected LinearLayout gestureLayout;
-    protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
-    protected ImageView bottomSheetArrowImageView;
-    protected Button buttonCloseStreetView;
-    protected TextView streetViewName;
-    protected ScrollView streetView;
-    protected LinearLayout listNearByPlaces;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -115,84 +95,6 @@ public abstract class CameraActivity extends AppCompatActivity
         } else {
             requestPermission();
         }
-
-        gpsManager = new GPSManager(this, REQUEST_PGS_PERMISSION_CODE);
-
-        streetView = (ScrollView)findViewById(R.id.street_view);
-        buttonCloseStreetView = (Button) findViewById(R.id.close_street_view);
-        streetViewName = (TextView) findViewById(R.id.street_view_name);
-
-        listNearByPlaces = (LinearLayout) findViewById(R.id.scroll_view_result);
-        detectResult = (Button) findViewById(R.id.detect_result);
-
-        bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
-        gestureLayout = findViewById(R.id.gesture_layout);
-        sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
-        bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
-
-
-
-        buttonCloseStreetView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                backToScanStreetNameSign();
-            }
-        });
-
-        detectResult.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ShowData();
-            }
-        });
-
-        ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
-        vto.addOnGlobalLayoutListener(
-                new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                            gestureLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        } else {
-                            gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        }
-                        //                int width = bottomSheetLayout.getMeasuredWidth();
-                        int height = gestureLayout.getMeasuredHeight();
-
-                        sheetBehavior.setPeekHeight(height);
-                    }
-                });
-        sheetBehavior.setHideable(false);
-
-        sheetBehavior.setBottomSheetCallback(
-                new BottomSheetBehavior.BottomSheetCallback() {
-                    @Override
-                    public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                        switch (newState) {
-                            case BottomSheetBehavior.STATE_HIDDEN:
-                                break;
-                            case BottomSheetBehavior.STATE_EXPANDED: {
-                                bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_down);
-                            }
-                            break;
-                            case BottomSheetBehavior.STATE_COLLAPSED: {
-                                bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
-                            }
-                            break;
-                            case BottomSheetBehavior.STATE_DRAGGING:
-                                break;
-                            case BottomSheetBehavior.STATE_SETTLING:
-                                bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
-                                break;
-                        }
-                    }
-
-                    @Override
-                    public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-                    }
-                });
-
-        GMAP_APIS = new GMapAPIs(this, API_KEY);
 
     }
 
@@ -386,13 +288,7 @@ public abstract class CameraActivity extends AppCompatActivity
                     requestPermission();
                 }
                 break;
-            case REQUEST_PGS_PERMISSION_CODE:
-                if (grantResults.length > 0 &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    gpsManager.onGPSPermissionGranted(true);
-                }  else {
-                    gpsManager.onGPSPermissionGranted(false);
-                }
+            default:
                 break;
         }
     }
@@ -552,9 +448,6 @@ public abstract class CameraActivity extends AppCompatActivity
     public void onClick(View v) {
 
     }
-    protected abstract void backToScanStreetNameSign();
-
-    protected abstract void ShowData();
 
     protected abstract void processImage();
 
