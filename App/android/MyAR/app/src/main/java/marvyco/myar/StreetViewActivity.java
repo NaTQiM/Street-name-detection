@@ -66,15 +66,7 @@ public class StreetViewActivity extends AppCompatActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Bundle param = getIntent().getExtras();
-        temp_data = "??";
-        try {
-            if (param!=null)
-            {
-                temp_data = param.getString("street");
-            }
-        }
-        catch (Exception e) { e.printStackTrace(); }
+        setContentView(R.layout.street_view_layout);
 
         gpsManager = new GPSManager(this, REQUEST_PGS_PERMISSION_CODE);
 
