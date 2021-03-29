@@ -20,7 +20,7 @@
         app:layout_constraintVertical_bias="0.499"
         android:shadowRadius="@android:integer/config_mediumAnimTime"
         android:background="@drawable/rounded_corner"
-        android:textSize="17dp"
+        android:textSize="15dp"
         />
 
     <Button
@@ -37,6 +37,6 @@
         app:layout_constraintVertical_bias="0.36"
         android:shadowRadius="@android:integer/config_mediumAnimTime"
         android:background="@drawable/rounded_corner"
-        android:textSize="17dp"
+        android:textSize="15dp"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>
