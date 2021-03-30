@@ -42,7 +42,7 @@ public class DisplayWelcome extends AppCompatActivity {
             }
         });
 
-        Log.i(DisplayWelcome.class.toString(), " Entered");
+        Log.i(DisplayWelcome.class.toString(), "Entered");
     }
 
     void welcomeWaiting(int seconds, Runnable callback) {

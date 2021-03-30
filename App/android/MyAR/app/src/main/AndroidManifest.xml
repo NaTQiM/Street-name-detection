@@ -37,6 +37,8 @@
         android:name=".StreetDetectionResultPopup"
         android:theme="@style/AppTheme.PopMe">
     </activity>
+    <activity android:name=".StreetViewActivity">
+    </activity>
     <meta-data
         android:name="com.google.mlkit.vision.DEPENDENCIES"
         android:value="ocr" />

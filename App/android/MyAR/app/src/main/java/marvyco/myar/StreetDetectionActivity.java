@@ -123,7 +123,6 @@ public class StreetDetectionActivity extends CameraActivity implements OnImageAv
         borderedText = new BorderedText(textSizePx);
         borderedText.setTypeface(Typeface.MONOSPACE);
 
-
         tracker = new MultiBoxTracker(this);
 
         int cropSize = TF_OD_API_INPUT_SIZE;
