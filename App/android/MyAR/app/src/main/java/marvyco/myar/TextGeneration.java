@@ -91,13 +91,6 @@ public class TextGeneration {
         void CallBackFailure(@NonNull Exception e);
     }
 
-    public static Bitmap cropBitmap(Bitmap bitmap, Rect rect){
-        int w=rect.right-rect.left;
-        int h=rect.bottom-rect.top;
-        Bitmap ret=Bitmap.createBitmap(w, h, bitmap.getConfig());
-        Canvas canvas = new Canvas(ret);
-        canvas.drawBitmap(bitmap, -rect.left, -rect.top, null);
-        return ret;
-    }
+
 }
 

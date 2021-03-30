@@ -57,6 +57,7 @@ import java.nio.ByteBuffer;
 import marvyco.myar.env.ImageUtils;
 import marvyco.myar.env.Logger;
 import marvyco.myar.utilitis.GMapAPIs;
+import marvyco.myar.utilitis.Utility;
 
 public abstract class CameraActivity extends AppCompatActivity
         implements OnImageAvailableListener,
@@ -185,7 +186,7 @@ public abstract class CameraActivity extends AppCompatActivity
             isProcessingFrame = true;
             Trace.beginSection("imageAvailable");
             final Plane[] planes = image.getPlanes();
-            fillBytes(planes, yuvBytes);
+            Utility.fillBytes(planes, yuvBytes);
             yRowStride = planes[0].getRowStride();
             final int uvRowStride = planes[1].getRowStride();
             final int uvPixelStride = planes[1].getPixelStride();
@@ -401,18 +402,7 @@ public abstract class CameraActivity extends AppCompatActivity
         getFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
     }
 
-    protected void fillBytes(final Plane[] planes, final byte[][] yuvBytes) {
-        // Because of the variable row stride it's not possible to know in
-        // advance the actual necessary dimensions of the yuv planes.
-        for (int i = 0; i < planes.length; ++i) {
-            final ByteBuffer buffer = planes[i].getBuffer();
-            if (yuvBytes[i] == null) {
-                LOGGER.d("Initializing buffer %d at size %d", i, buffer.capacity());
-                yuvBytes[i] = new byte[buffer.capacity()];
-            }
-            buffer.get(yuvBytes[i]);
-        }
-    }
+
 
     public boolean isDebug() {
         return debug;

@@ -2,11 +2,14 @@ package marvyco.myar.utilitis;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.media.Image;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 
@@ -47,7 +50,24 @@ public class Utility {
         box.right = (int) size.right;
         box.bottom = (int) size.bottom;
 
-        Bitmap recognitionBitmap = TextGeneration.cropBitmap(bitmap, box);
-        return recognitionBitmap;
+
+        int w=box.right-box.left;
+        int h=box.bottom-box.top;
+        Bitmap ret = Bitmap.createBitmap(w, h, bitmap.getConfig());
+        Canvas canvas = new Canvas(ret);
+        canvas.drawBitmap(bitmap, -box.left, -box.top, null);
+        return ret;
+    }
+
+    public static void fillBytes(final Image.Plane[] planes, final byte[][] yuvBytes) {
+        // Because of the variable row stride it's not possible to know in
+        // advance the actual necessary dimensions of the yuv planes.
+        for (int i = 0; i < planes.length; ++i) {
+            final ByteBuffer buffer = planes[i].getBuffer();
+            if (yuvBytes[i] == null) {
+                yuvBytes[i] = new byte[buffer.capacity()];
+            }
+            buffer.get(yuvBytes[i]);
+        }
     }
 }
