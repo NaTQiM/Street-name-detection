@@ -1,0 +1,3 @@
+include ':test'
+include ':testlibrary'
+rootProject.name = "StreetDetectLibrary"
