@@ -160,25 +160,25 @@ public class StreetDetectionActivity extends CameraActivity implements OnImageAv
         croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Config.ARGB_8888);
 
         frameToCropTransform =
-                ImageUtils.getTransformationMatrix(
-                        previewWidth, previewHeight,
-                        cropSize, cropSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
+            ImageUtils.getTransformationMatrix(
+                previewWidth, previewHeight,
+                cropSize, cropSize,
+                sensorOrientation, MAINTAIN_ASPECT);
 
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
-                new OverlayView.DrawCallback() {
-                    @Override
-                    public void drawCallback(final Canvas canvas) {
-                        tracker.draw(canvas);
-                        if (isDebug()) {
-                            tracker.drawDebug(canvas);
-                        }
+            new OverlayView.DrawCallback() {
+                @Override
+                public void drawCallback(final Canvas canvas) {
+                    tracker.draw(canvas);
+                    if (isDebug()) {
+                        tracker.drawDebug(canvas);
                     }
-                });
+                }
+            });
 
         tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
 
@@ -382,17 +382,17 @@ public class StreetDetectionActivity extends CameraActivity implements OnImageAv
     @Override
     protected void setUseNNAPI(final boolean isChecked) {
         runInBackground(
-                () -> {
-                    try {
-                        detector.setUseNNAPI(isChecked);
-                    } catch (UnsupportedOperationException e) {
-                        LOGGER.e(e, "Failed to set \"Use NNAPI\".");
-                        runOnUiThread(
-                                () -> {
-                                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                                });
-                    }
-                });
+            () -> {
+                try {
+                    detector.setUseNNAPI(isChecked);
+                } catch (UnsupportedOperationException e) {
+                    LOGGER.e(e, "Failed to set \"Use NNAPI\".");
+                    runOnUiThread(
+                        () -> {
+                            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+                }
+            });
     }
 
 }
