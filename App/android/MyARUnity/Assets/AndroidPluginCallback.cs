@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 class AndroidPluginCallback : AndroidJavaProxy
 {
-    public AndroidPluginCallback() : base("com.streetdetect.testlibrary.DetectionListener") { }
+    public AndroidPluginCallback() : base("com.streetdetect.library.DetectionListener") { }
 
     public void onSuccess(string response)
     {

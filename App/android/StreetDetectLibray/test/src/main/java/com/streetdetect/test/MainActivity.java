@@ -5,8 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.streetdetect.testlibrary.DetectionListener;
-import com.streetdetect.testlibrary.MyStreetNameSignDetection;
+import com.streetdetect.library.DetectionListener;
+import com.streetdetect.library.StreetDetection;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,7 +16,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         byte [] image = {1,2,3,4,5,6,7};
-        MyStreetNameSignDetection.ProcessImage(image, 0, 0, new DetectionListener() {
+        StreetDetection.ProcessImage(image, 0, 0, new DetectionListener() {
             @Override
             public void onSuccess(String response) {
                 Log.i(" >>>>>>>>>>>>>>>>> ", response);

@@ -19,7 +19,7 @@ public class MainController : MonoBehaviour
         Texture2D texture2D = TextureToTexture2D(image.texture);
         Debug.Log(" >>> " + texture2D.format);
         byte[] image_byte = texture2D.GetRawTextureData();
-        Debug.Log(" >>> " + image_byte);
+        Debug.Log(" >>> " + texture2D.width + " - " + texture2D.height);
 
        ProcessImage(image_byte, texture2D.width, texture2D.height);
     }
@@ -34,7 +34,7 @@ public class MainController : MonoBehaviour
     {
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        AndroidJavaObject pluginClass = new AndroidJavaObject("com.streetdetect.testlibrary.MyStreetNameSignDetection");
+        AndroidJavaObject pluginClass = new AndroidJavaObject("com.streetdetect.library.MyStreetNameSignDetection");
         pluginClass.CallStatic("ProcessImage", image, width, height, new AndroidPluginCallback());
 #endif
     }
