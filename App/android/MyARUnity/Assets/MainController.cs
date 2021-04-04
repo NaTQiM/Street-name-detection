@@ -34,7 +34,7 @@ public class MainController : MonoBehaviour
     {
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        AndroidJavaObject pluginClass = new AndroidJavaObject("com.streetdetect.library.MyStreetNameSignDetection");
+        AndroidJavaObject pluginClass = new AndroidJavaObject("com.streetdetect.library.StreetDetection");
         pluginClass.CallStatic("ProcessImage", image, width, height, new AndroidPluginCallback());
 #endif
     }
