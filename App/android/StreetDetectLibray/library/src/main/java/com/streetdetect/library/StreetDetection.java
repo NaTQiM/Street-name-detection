@@ -13,7 +13,7 @@ public class
 StreetDetection {
     private static DetectionListener listener;
     public static void ProcessImage(byte[] bytes, int width, int height, DetectionListener listener) {
-        //listener.onSuccess("Hello! from Android Native " + width + " " + height + " " + bytes.length);
+//        listener.onSuccess("Hello! from Android Native " + width + " " + height + " " + bytes.length);
         Bitmap image = bytesToBitmap(bytes, width, height);
         TextGeneration textGen = new TextGeneration();
         textGen.AddListener(new TextGeneration.TextGenCallback() {
