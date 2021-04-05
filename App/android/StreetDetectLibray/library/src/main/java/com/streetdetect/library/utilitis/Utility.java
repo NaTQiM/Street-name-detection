@@ -14,7 +14,7 @@ import java.text.Normalizer;
 import java.util.regex.Pattern;
 
 public class Utility {
-    public static Double distance(Tupple<Double, Double> v1, Tupple<Double, Double> v2)
+    public static Double distance(Tuple<Double, Double> v1, Tuple<Double, Double> v2)
     {
         return Math.sqrt(Math.pow(v1.first*10000 - v2.first*10000,2) + Math.pow(v1.first*10000 - v2.first*10000,2));
     }

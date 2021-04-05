@@ -12,6 +12,15 @@
 #   public *;
 #}
 
+-keep class * implements com.google.android.gms.tasks.OnFailureListener
+-keep class * implements com.google.android.gms.tasks.OnSuccessListener
+-keep class * implements com.google.android.gms.tasks.Task
+-keep class * implements com.google.mlkit.vision.common.InputImage
+-keep class * implements com.google.mlkit.vision.text.Text
+-keep class * implements com.google.mlkit.vision.text.TextRecognition
+-keep class * implements com.google.mlkit.vision.text.TextRecognizer
+
+
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable

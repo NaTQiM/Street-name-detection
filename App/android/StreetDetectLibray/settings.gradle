@@ -1,5 +1,5 @@
 include ':test'
 include ':library'
-include ':lib_interpreter'
-include ':lib_task_api'
+//include ':lib_interpreter'
+//include ':lib_task_api'
 rootProject.name = "StreetDetectLibrary"
